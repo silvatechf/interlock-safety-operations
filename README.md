@@ -44,14 +44,37 @@ The generic core must not define railway distances, braking limits, occupancy in
 
 ## Quick start
 
-Python 3.12 is the development baseline.
+Requirements: Git and Python 3.12. Run these commands from a terminal in the repository root.
+
+Clone the repository:
+
+```shell
+git clone https://github.com/silvatechf/interlock-safety-operations.git
+cd interlock-safety-operations
+```
+
+Create an environment, install development dependencies, and run the demo and checks.
+
+**Windows PowerShell:**
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-pytest
 python examples/demo.py
+pytest
+ruff check .
+mypy src
+```
+
+**macOS / Linux (Bash or compatible shell):**
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python examples/demo.py
+pytest
 ruff check .
 mypy src
 ```
