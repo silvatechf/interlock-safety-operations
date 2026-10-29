@@ -37,8 +37,13 @@ def build_command(**overrides: object) -> CommandEnvelope:
     return CommandEnvelope(**values)
 
 
-def build_context(*, observed_at: datetime = NOW, facts: dict[str, object] | None = None) -> PolicyContext:
-    return PolicyContext(observed_at=observed_at, facts={"system_ready": True} if facts is None else facts)
+def build_context(
+    *, observed_at: datetime = NOW, facts: dict[str, object] | None = None
+) -> PolicyContext:
+    return PolicyContext(
+        observed_at=observed_at,
+        facts={"system_ready": True} if facts is None else facts,
+    )
 
 
 def test_explicit_preconditions_allow() -> None:
@@ -94,6 +99,16 @@ def test_malformed_policy_condition_denies() -> None:
     result = evaluate(build_command(), build_context(), policy, now=NOW)
     assert result.status is DecisionStatus.DENY
     assert ReasonCode.POLICY_CONFIGURATION_INVALID in result.reason_codes
+
+
+def test_naive_evaluation_time_is_rejected() -> None:
+    naive = datetime(2026, 1, 1, 12, 0)
+    try:
+        evaluate(build_command(), build_context(), build_policy(), now=naive)
+    except ValueError as exc:
+        assert "timezone-aware" in str(exc)
+    else:
+        raise AssertionError("Expected naive evaluation time to be rejected")
 
 
 def test_evaluation_never_executes_commands() -> None:
