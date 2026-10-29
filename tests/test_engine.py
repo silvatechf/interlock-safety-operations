@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sentinel_interlock.engine import evaluate
 from sentinel_interlock.models import (
@@ -9,7 +9,7 @@ from sentinel_interlock.models import (
     ReasonCode,
 )
 
-NOW = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
 
 
 def build_policy(**overrides: object) -> Policy:
@@ -40,10 +40,8 @@ def build_command(**overrides: object) -> CommandEnvelope:
 def build_context(
     *, observed_at: datetime = NOW, facts: dict[str, object] | None = None
 ) -> PolicyContext:
-    return PolicyContext(
-        observed_at=observed_at,
-        facts={"system_ready": True} if facts is None else facts,
-    )
+    selected_facts = {"system_ready": True} if facts is None else facts
+    return PolicyContext(observed_at=observed_at, facts=selected_facts)
 
 
 def test_explicit_preconditions_allow() -> None:
@@ -53,23 +51,34 @@ def test_explicit_preconditions_allow() -> None:
 
 
 def test_missing_actor_denies_by_default() -> None:
-    result = evaluate(build_command(actor_id=None), build_context(), build_policy(), now=NOW)
+    result = evaluate(
+        build_command(actor_id=None), build_context(), build_policy(), now=NOW
+    )
     assert result.status is DecisionStatus.DENY
     assert ReasonCode.AUTHENTICATION_REQUIRED in result.reason_codes
 
 
 def test_unauthorized_actor_is_denied() -> None:
-    result = evaluate(build_command(actor_id="unknown"), build_context(), build_policy(), now=NOW)
+    result = evaluate(
+        build_command(actor_id="unknown"), build_context(), build_policy(), now=NOW
+    )
     assert ReasonCode.ACTOR_NOT_AUTHORIZED in result.reason_codes
 
 
 def test_unknown_command_is_denied() -> None:
-    result = evaluate(build_command(command="demo.delete_everything"), build_context(), build_policy(), now=NOW)
+    result = evaluate(
+        build_command(command="demo.delete_everything"),
+        build_context(),
+        build_policy(),
+        now=NOW,
+    )
     assert ReasonCode.COMMAND_NOT_ALLOWED in result.reason_codes
 
 
 def test_missing_context_fact_denies() -> None:
-    result = evaluate(build_command(), build_context(facts={}), build_policy(), now=NOW)
+    result = evaluate(
+        build_command(), build_context(facts={}), build_policy(), now=NOW
+    )
     assert result.status is DecisionStatus.DENY
     assert ReasonCode.CONTEXT_MISSING in result.reason_codes
 
@@ -87,7 +96,8 @@ def test_future_context_timestamp_denies() -> None:
 
 
 def test_failed_condition_denies_and_explains_fact() -> None:
-    result = evaluate(build_command(), build_context(facts={"system_ready": False}), build_policy(), now=NOW)
+    context = build_context(facts={"system_ready": False})
+    result = evaluate(build_command(), context, build_policy(), now=NOW)
     assert ReasonCode.PRECONDITION_FAILED in result.reason_codes
     assert result.evidence["failed_conditions"] == [
         {"fact": "system_ready", "expected": True, "actual": False}
