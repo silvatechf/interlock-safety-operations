@@ -26,7 +26,12 @@
 - [ ] Add fault injection and broader fuzz/property tests.
 - [x] Add secret scanning and review CI action pinning.
 - [x] Trace risks to tests and architecture decisions.
-- [ ] Independent review of claims and scope.
+- [x] Repository-level review of public claims and scope (self-review; not an external independent assessment).
+
+## Deferred by design
+
+- Broader fault injection and fuzz/property tests remain optional follow-up work for this portfolio scope; they are not represented as completed assurance.
+- External independent assessment has not been performed. The completed scope review is a repository-level self-review only.
 
 ## Release gate
 
