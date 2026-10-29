@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class DecisionStatus(StrEnum):
@@ -90,7 +90,11 @@ class Policy(BaseModel):
 
 
 class DecisionEvidence(BaseModel):
-    """Structured explanation of a single policy evaluation."""
+    """Structured explanation of a single policy evaluation.
+
+    The decision status and reason codes form one contract: ALLOW has no
+    denial reasons, while DENY must explain itself with at least one reason.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     decision_id: UUID = Field(default_factory=uuid4)
@@ -102,3 +106,11 @@ class DecisionEvidence(BaseModel):
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     context_observed_at: datetime
     evidence: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def status_matches_reason_codes(self) -> DecisionEvidence:
+        if self.status is DecisionStatus.ALLOW and self.reason_codes:
+            raise ValueError("ALLOW decisions must not contain denial reason codes")
+        if self.status is DecisionStatus.DENY and not self.reason_codes:
+            raise ValueError("DENY decisions must contain at least one reason code")
+        return self
