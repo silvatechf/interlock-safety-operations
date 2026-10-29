@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from uuid import uuid4
+import json
 
 import pytest
 
@@ -35,19 +36,17 @@ def test_round_trip_preserves_decision() -> None:
 
 def test_serialization_is_deterministic() -> None:
     decision = make_decision()
-    assert serialize_evidence(decision) == serialize_evidence(decision)
+    reordered_evidence = dict(reversed(list(decision.evidence.items())))
+    equivalent_decision = decision.model_copy(update={"evidence": reordered_evidence})
+    assert serialize_evidence(decision) == serialize_evidence(equivalent_decision)
 
 
 def test_schema_version_is_explicit() -> None:
-    import json
-
     payload = json.loads(serialize_evidence(make_decision()))
     assert payload["schema_version"] == EVIDENCE_SCHEMA_VERSION
 
 
 def test_unknown_schema_version_is_rejected() -> None:
-    import json
-
     payload = json.loads(serialize_evidence(make_decision()))
     payload["schema_version"] = EVIDENCE_SCHEMA_VERSION + 1
     with pytest.raises(EvidenceSerializationError, match="unsupported"):
