@@ -68,6 +68,17 @@ Run `python examples/demo.py` to see three small, synthetic policy evaluations:
 
 For each scenario, the script prints stable reason codes and versioned evidence JSON. Decision IDs and timestamps vary between runs. The facts are caller-supplied synthetic assertions, not trusted sensor or identity-provider data; no command is executed and no external system is contacted. The `ALLOW` result illustrates policy evaluation only—it is not a real-world safety determination.
 
+## Engineering practices demonstrated
+
+- **Typed Python design:** validated request, policy, and evidence models with Pydantic.
+- **Defensive policy evaluation:** explicit allow-lists, freshness checks, required facts, and explainable deny reasons.
+- **Automated verification:** pytest unit tests and Hypothesis property-based tests for selected invariants.
+- **Code-quality gates:** Ruff linting and mypy strict type checking.
+- **Security hygiene:** Bandit static analysis, pip-audit dependency checks, GitGuardian secret scanning, and GitHub Actions pinned to full commit SHAs.
+- **Risk traceability:** documented links between selected risks, mitigations, named tests, architecture, and residual limitations.
+
+These are examples of engineering practices implemented in this repository, not a claim that all risks are eliminated or that the system is independently verified.
+
 ## Status
 
 Portfolio-stage reference implementation. Tests demonstrate only the software properties they cover, not operational safety or suitability.
