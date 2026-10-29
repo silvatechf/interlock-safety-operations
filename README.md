@@ -43,9 +43,14 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 pytest
+python examples/demo.py
 ruff check .
 mypy src
 ```
+
+## Demo output
+
+The script prints one illustrative allow decision and two denials, including stable reason codes and versioned evidence JSON. All inputs are synthetic; no command is executed. Output timestamps and decision IDs vary between runs.
 
 ## Status
 
