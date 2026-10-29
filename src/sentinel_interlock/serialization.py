@@ -44,15 +44,17 @@ def _validate_finite_numbers(value: object) -> None:
     if isinstance(value, dict):
         for child in value.values():
             _validate_finite_numbers(child)
-    elif isinstance(value, list):
+    elif isinstance(value, (list, tuple)):
         for child in value:
             _validate_finite_numbers(child)
 
 
 def serialize_evidence(decision: DecisionEvidence) -> str:
     """Serialize one decision using a versioned envelope and stable JSON ordering."""
+    # Validate the original Python values: Pydantic's JSON-mode dump can normalize
+    # non-finite floats (for example NaN) before json.dumps sees them.
+    _validate_finite_numbers(decision.evidence)
     payload_data = decision.model_dump(mode="json")
-    _validate_finite_numbers(payload_data)
     envelope = {
         "schema_version": EVIDENCE_SCHEMA_VERSION,
         "decision": payload_data,
@@ -100,12 +102,12 @@ def deserialize_evidence(payload: str) -> DecisionEvidence:
     if version != EVIDENCE_SCHEMA_VERSION:
         raise EvidenceSerializationError(f"unsupported evidence schema version: {version!r}")
 
-    decision = envelope.get("decision")
-    if not isinstance(decision, dict):
+    decision_data = envelope.get("decision")
+    if not isinstance(decision_data, dict):
         raise EvidenceSerializationError("evidence decision must be a JSON object")
 
     try:
-        _validate_finite_numbers(decision)
-        return DecisionEvidence.model_validate(decision)
+        _validate_finite_numbers(decision_data)
+        return DecisionEvidence.model_validate(decision_data)
     except (EvidenceSerializationError, ValidationError, RecursionError) as exc:
         raise EvidenceSerializationError("evidence decision does not match the schema") from exc
