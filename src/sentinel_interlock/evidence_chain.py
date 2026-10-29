@@ -83,7 +83,7 @@ class EvidenceChain:
             if not isinstance(record, EvidenceChainRecord):
                 return False
             if (
-                not isinstance(record.sequence, int)
+                type(record.sequence) is not int
                 or isinstance(record.sequence, bool)
                 or record.sequence != expected_sequence
                 or not isinstance(record.previous_hash, str)
