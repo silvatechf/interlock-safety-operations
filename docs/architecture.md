@@ -18,10 +18,16 @@ Policy authoring authorization, change review, rollback, signing, and version li
 
 The optional session guard tracks command IDs in process memory and uses a lock to serialize calls in one process. State is lost on restart and is not shared across processes or hosts. This is not durable idempotency or a distributed replay-protection guarantee.
 
+## Evidence integrity chain
+
+`EvidenceChain` creates an in-memory sequence of serialized decision records. Each record commits to its sequence number, previous record hash, and exact serialized payload using SHA-256 over canonical JSON. Verification checks sequence continuity, previous-hash links, payload schema validity, and each record hash.
+
+This detects payload edits, middle-record removal, reordering, and broken links when the verifier has the expected chain. It is not an authenticated signature or proof of who created a record. An attacker able to rewrite the entire chain can recompute every hash. Removing a suffix, including the final record, cannot be detected without an independently retained checkpoint, trusted signature, or external anchor. The chain is in memory only and is not durable.
+
 ## Domain separation
 
 The core remains independent of domain rules. Railway and IT adapters use synthetic facts only and do not actuate commands.
 
 ## Known gaps
 
-Durable replay defense and idempotency, cryptographically bound identity, durable/tamper-evident evidence, distributed consistency, trusted time, policy governance, independent verification, and domain-specific hazard controls remain unimplemented.
+Durable replay defense and idempotency, cryptographically bound identity, signed or externally anchored evidence, durable storage, distributed consistency, trusted time, policy governance, independent verification, and domain-specific hazard controls remain unimplemented.
