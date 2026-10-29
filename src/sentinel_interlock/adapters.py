@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any
 
 from .engine import evaluate
-from .models import CommandEnvelope, DecisionEvidence, Policy, PolicyContext
+from .models import (\n    CommandEnvelope,\n    DecisionEvidence,\n    Policy,\n    PolicyCondition,\n    PolicyContext,\n)
 
 RAILWAY_POLICY = Policy(
     policy_id="railway-simulation-movement",
@@ -22,9 +22,9 @@ RAILWAY_POLICY = Policy(
     ),
     max_context_age_seconds=5,
     required_conditions=(
-        {"fact": "route_clear", "equals": True},
-        {"fact": "section_unoccupied", "equals": True},
-        {"fact": "movement_authority_valid", "equals": True},
+        PolicyCondition(fact="route_clear", equals=True),
+        PolicyCondition(fact="section_unoccupied", equals=True),
+        PolicyCondition(fact="movement_authority_valid", equals=True),
     ),
 )
 
@@ -38,9 +38,9 @@ IT_POLICY = Policy(
     ),
     max_context_age_seconds=30,
     required_conditions=(
-        {"fact": "maintenance_window_open", "equals": True},
-        {"fact": "change_approved", "equals": True},
-        {"fact": "backup_verified", "equals": True},
+        PolicyCondition(fact="maintenance_window_open", equals=True),
+        PolicyCondition(fact="change_approved", equals=True),
+        PolicyCondition(fact="backup_verified", equals=True),
     ),
 )
 
