@@ -4,7 +4,7 @@
 
 - [x] Establish scope, non-goals, safety boundary, and threat model.
 - [x] Add a small policy evaluator and deterministic tests.
-- [ ] Verify CI execution and resolve discovered issues.
+- [x] Verify CI execution and resolve discovered issues.
 
 ## Milestone 1 — Core contracts
 
@@ -24,7 +24,7 @@
 
 - [ ] State-transition model and invariants.
 - [ ] Fault injection, fuzzing, and property tests.
-- [ ] Dependency and secret scanning in CI.
+- [x] Dependency audit in CI; secret scanning remains planned.
 - [ ] Trace risks to tests and architecture decisions.
 - [ ] Independent review of claims and scope.
 
