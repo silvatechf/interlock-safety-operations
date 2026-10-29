@@ -99,3 +99,26 @@ def test_hash_chain_does_not_hide_invalid_evidence_payload() -> None:
     )
 
     assert not EvidenceChain.verify((invalid,))
+
+
+def test_identical_evidence_produces_identical_record_hash() -> None:
+    decision = make_entry()
+    first_chain = EvidenceChain()
+    second_chain = EvidenceChain()
+
+    first = first_chain.append(decision)
+    second = second_chain.append(decision)
+
+    assert first.payload == second.payload
+    assert first.record_hash == second.record_hash
+
+
+def test_final_suffix_truncation_requires_external_checkpoint() -> None:
+    chain = EvidenceChain()
+    chain.append(make_entry())
+    chain.append(make_entry())
+    records = chain.records()
+
+    # A valid prefix is internally consistent; the verifier cannot know
+    # whether later records once existed without an external checkpoint.
+    assert EvidenceChain.verify(records[:1])
