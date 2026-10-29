@@ -17,9 +17,20 @@ El proyecto combina un núcleo genérico de evaluación de políticas con adapta
 ## Estructura
 
 - `src/sentinel_interlock/`: modelos, motor de evaluación y ledger en memoria.
-- `tests/`: pruebas deterministas.
+- `examples/demo.py`: demostración reproducible de tres escenarios sintéticos.
+- `tests/`: pruebas deterministas y pruebas basadas en propiedades.
 - `docs/`: arquitectura, amenazas, límites de seguridad y hoja de ruta.
-- `.github/workflows/`: integración continua.
+- `.github/workflows/`: integración continua, análisis estático y auditoría de dependencias.
+
+## Ejecutar la demostración
+
+Con Python 3.12 y las dependencias de desarrollo instaladas:
+
+```powershell
+python examples/demo.py
+```
+
+La demostración muestra una decisión ilustrativa `ALLOW` y dos `DENY`, con códigos de motivo y evidencia JSON versionada. Los identificadores y las marcas de tiempo varían entre ejecuciones. Los datos son afirmaciones sintéticas, no datos de sensores confiables; no se ejecuta ningún comando ni se contacta con sistemas externos. Un resultado `ALLOW` no constituye una garantía de seguridad real.
 
 Es un proyecto de portfolio local-first, no un producto de control operativo. Las pruebas solo demuestran las propiedades verificadas; no demuestran seguridad real ni certificación.
 
