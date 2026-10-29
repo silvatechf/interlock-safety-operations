@@ -26,11 +26,19 @@ The portfolio MVP combines a generic policy-evaluation core with domain-specific
 
 ## Architecture
 
-```text
-Simulation adapter -> policy enforcement core -> decision + evidence
-                              |
-                  no command execution/actuation
+```mermaid
+flowchart TD
+    A["Synthetic request and facts"] --> B["Domain simulation adapter"]
+    B --> C["Policy evaluation core"]
+    C --> D{"All configured checks pass?"}
+    D -->|Yes| E["ALLOW + structured evidence"]
+    D -->|No| F["DENY + reason codes and evidence"]
+    E --> G["Caller inspects result"]
+    F --> G
+    G -. "No execution or actuation interface" .-> H["No external action"]
 ```
+
+The generic core checks actor and command allow-lists, required facts, context freshness, and explicit equality conditions. The actor identifier is not authenticated identity, and input facts are not trusted sensor data. The core produces a decision and evidence only; it does not execute the requested command.
 
 The generic core must not define railway distances, braking limits, occupancy interpretations, or industrial thresholds. Domain constraints belong in explicitly scoped simulation adapters.
 
