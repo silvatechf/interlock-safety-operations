@@ -34,14 +34,14 @@ La demostración muestra una decisión ilustrativa `ALLOW` y dos `DENY`, con có
 
 ## Prácticas de ingeniería demostradas
 
-- **Python con tipos y modelos validados:** modelos de solicitudes, políticas y evidencias con Pydantic.
-- **Evaluación defensiva:** listas de autorización explícitas, control de vigencia, comprobación de datos obligatorios y motivos de denegación.
-- **Verificación automatizada:** pruebas unitarias con pytest y pruebas basadas en propiedades con Hypothesis para invariantes seleccionados.
-- **Calidad del código:** análisis con Ruff y comprobación estricta de tipos con mypy.
-- **Higiene de seguridad:** análisis estático con Bandit, auditoría de dependencias con pip-audit, detección de secretos con GitGuardian y acciones de GitHub fijadas por SHA completo.
-- **Trazabilidad de riesgos:** relación documentada entre riesgos seleccionados, mitigaciones, pruebas concretas, arquitectura y limitaciones pendientes.
+- **Python con tipos y modelos validados:** modelos con Pydantic en [`models.py`](../../src/sentinel_interlock/models.py).
+- **Evaluación defensiva:** listas de autorización, control de vigencia, datos obligatorios y motivos de denegación en [`engine.py`](../../src/sentinel_interlock/engine.py).
+- **Verificación automatizada:** [pruebas basadas en propiedades](../../tests/test_properties.py), [pruebas de serialización de evidencias](../../tests/test_serialization.py) y [pruebas de sesión y repetición](../../tests/test_session.py).
+- **Calidad del código:** configuración de Ruff y mypy estricto en [`pyproject.toml`](../../pyproject.toml).
+- **Higiene de seguridad:** Bandit, pip-audit y acciones de GitHub fijadas por SHA completo en el [flujo de CI](../../.github/workflows/ci.yml); GitGuardian comprueba secretos en las solicitudes de cambio.
+- **Trazabilidad de riesgos:** [matriz de riesgos y pruebas](../risk-traceability.md) con mitigaciones, pruebas concretas, arquitectura y limitaciones pendientes.
 
-Estas prácticas describen lo implementado en este repositorio; no significan que todos los riesgos estén eliminados ni que exista una verificación independiente.
+Estos enlaces permiten revisar el código y las pruebas que respaldan cada afirmación. Describen prácticas presentes en el repositorio; no significan que todos los riesgos estén eliminados ni que exista una verificación independiente.
 
 Es un proyecto de portfolio local-first, no un producto de control operativo. Las pruebas solo demuestran las propiedades verificadas; no demuestran seguridad real ni certificación.
 
