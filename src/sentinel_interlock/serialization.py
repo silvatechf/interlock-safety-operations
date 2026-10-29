@@ -7,6 +7,7 @@ provide signatures, tamper evidence, durable storage, or a trusted timestamp.
 from __future__ import annotations
 
 import json
+import math
 from typing import Final
 
 from pydantic import ValidationError
@@ -14,26 +15,82 @@ from pydantic import ValidationError
 from .models import DecisionEvidence
 
 EVIDENCE_SCHEMA_VERSION: Final[int] = 1
+MAX_EVIDENCE_PAYLOAD_BYTES: Final[int] = 1_048_576
 
 
 class EvidenceSerializationError(ValueError):
     """Raised when evidence JSON is malformed or uses an unsupported schema."""
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous JSON objects containing repeated property names."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise EvidenceSerializationError(f"duplicate JSON key: {key!r}")
+        result[key] = value
+    return result
+
+
+def _reject_nonstandard_constant(value: str) -> None:
+    """Reject NaN and Infinity tokens, which are not valid JSON numbers."""
+    raise EvidenceSerializationError(f"non-standard JSON constant: {value}")
+
+
+def _validate_finite_numbers(value: object) -> None:
+    """Reject non-finite floating-point values at any nesting depth."""
+    if isinstance(value, float) and not math.isfinite(value):
+        raise EvidenceSerializationError("evidence contains a non-finite number")
+    if isinstance(value, dict):
+        for child in value.values():
+            _validate_finite_numbers(child)
+    elif isinstance(value, list):
+        for child in value:
+            _validate_finite_numbers(child)
+
+
 def serialize_evidence(decision: DecisionEvidence) -> str:
     """Serialize one decision using a versioned envelope and stable JSON ordering."""
+    payload_data = decision.model_dump(mode="json")
+    _validate_finite_numbers(payload_data)
     envelope = {
         "schema_version": EVIDENCE_SCHEMA_VERSION,
-        "decision": decision.model_dump(mode="json"),
+        "decision": payload_data,
     }
-    return json.dumps(envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    try:
+        payload = json.dumps(
+            envelope,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as exc:
+        raise EvidenceSerializationError("evidence cannot be represented as strict JSON") from exc
+    if len(payload.encode("utf-8")) > MAX_EVIDENCE_PAYLOAD_BYTES:
+        raise EvidenceSerializationError("serialized evidence exceeds the maximum payload size")
+    return payload
 
 
 def deserialize_evidence(payload: str) -> DecisionEvidence:
-    """Validate a versioned evidence envelope; reject unknown schema versions."""
+    """Validate a versioned evidence envelope; reject ambiguous or oversized JSON."""
+    if not isinstance(payload, str):
+        raise EvidenceSerializationError("evidence payload must be a string")
     try:
-        envelope = json.loads(payload)
-    except json.JSONDecodeError as exc:
+        payload_size = len(payload.encode("utf-8"))
+    except UnicodeError as exc:
+        raise EvidenceSerializationError("evidence payload is not valid UTF-8 text") from exc
+    if payload_size > MAX_EVIDENCE_PAYLOAD_BYTES:
+        raise EvidenceSerializationError("evidence payload exceeds the maximum payload size")
+    try:
+        envelope = json.loads(
+            payload,
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonstandard_constant,
+        )
+    except EvidenceSerializationError:
+        raise
+    except (json.JSONDecodeError, UnicodeError, RecursionError) as exc:
         raise EvidenceSerializationError("evidence payload is not valid JSON") from exc
 
     if not isinstance(envelope, dict):
@@ -48,6 +105,7 @@ def deserialize_evidence(payload: str) -> DecisionEvidence:
         raise EvidenceSerializationError("evidence decision must be a JSON object")
 
     try:
+        _validate_finite_numbers(decision)
         return DecisionEvidence.model_validate(decision)
-    except ValidationError as exc:
+    except (EvidenceSerializationError, ValidationError, RecursionError) as exc:
         raise EvidenceSerializationError("evidence decision does not match the schema") from exc
