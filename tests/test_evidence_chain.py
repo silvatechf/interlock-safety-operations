@@ -2,11 +2,16 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
+from pydantic import ValidationError
+
 from sentinel_interlock.evidence_chain import (
     GENESIS_HASH,
     EvidenceChain,
+    EvidenceChainRecord,
+    _record_hash,
 )
-from sentinel_interlock.models import DecisionEvidence, DecisionStatus
+from sentinel_interlock.models import DecisionEvidence, DecisionStatus, ReasonCode
 
 NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -16,7 +21,7 @@ def make_entry() -> DecisionEvidence:
         command_id=uuid4(),
         policy_id="policy",
         policy_version="1",
-        status=DecisionStatus.DENY,
+        status=DecisionStatus.ALLOW,
         reason_codes=(),
         context_observed_at=NOW,
         evaluated_at=NOW,
@@ -88,9 +93,6 @@ def test_hash_chain_does_not_hide_invalid_evidence_payload() -> None:
     chain.append(make_entry())
     record = chain.records()[0]
     invalid = replace(record, payload="not-json")
-    # Recompute the record hash to isolate payload schema validation.
-    from sentinel_interlock.evidence_chain import _record_hash
-
     invalid = replace(
         invalid,
         record_hash=_record_hash(
@@ -122,3 +124,40 @@ def test_final_suffix_truncation_requires_external_checkpoint() -> None:
     # A valid prefix is internally consistent; the verifier cannot know
     # whether later records once existed without an external checkpoint.
     assert EvidenceChain.verify(records[:1])
+
+
+@pytest.mark.parametrize("records", [None, "not-a-record-sequence", [None], [object()]])
+def test_malformed_record_collections_fail_closed(records: object) -> None:
+    assert not EvidenceChain.verify(records)  # type: ignore[arg-type]
+
+
+def test_boolean_sequence_number_is_rejected() -> None:
+    record = EvidenceChainRecord(
+        sequence=True,
+        previous_hash=GENESIS_HASH,
+        payload="{}",
+        record_hash="0" * 64,
+    )
+    assert not EvidenceChain.verify((record,))
+
+
+def test_decision_status_and_reason_codes_must_agree() -> None:
+    with pytest.raises(ValidationError, match="ALLOW decisions"):
+        DecisionEvidence(
+            command_id=uuid4(),
+            policy_id="policy",
+            policy_version="1",
+            status=DecisionStatus.ALLOW,
+            reason_codes=(ReasonCode.PRECONDITION_FAILED,),
+            context_observed_at=NOW,
+        )
+
+    with pytest.raises(ValidationError, match="DENY decisions"):
+        DecisionEvidence(
+            command_id=uuid4(),
+            policy_id="policy",
+            policy_version="1",
+            status=DecisionStatus.DENY,
+            reason_codes=(),
+            context_observed_at=NOW,
+        )
