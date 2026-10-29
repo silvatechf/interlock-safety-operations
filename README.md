@@ -50,7 +50,15 @@ mypy src
 
 ## Demo output
 
-The script prints one illustrative allow decision and two denials, including stable reason codes and versioned evidence JSON. All inputs are synthetic; no command is executed. Output timestamps and decision IDs vary between runs.
+Run `python examples/demo.py` to see three small, synthetic policy evaluations:
+
+| Scenario | Expected decision | What it demonstrates |
+| --- | --- | --- |
+| Railway-inspired movement request; all example preconditions are true | `ALLOW` | A request can pass when the configured actor, context freshness, and required facts satisfy the example policy. |
+| Railway-inspired request; section reported occupied | `DENY` | A failed precondition prevents the request from being allowed. |
+| IT service restart; context is 31 seconds old | `DENY` | Stale context is rejected when the example policy allows at most 30 seconds. |
+
+For each scenario, the script prints stable reason codes and versioned evidence JSON. Decision IDs and timestamps vary between runs. The facts are caller-supplied synthetic assertions, not trusted sensor or identity-provider data; no command is executed and no external system is contacted. The `ALLOW` result illustrates policy evaluation only—it is not a real-world safety determination.
 
 ## Status
 
