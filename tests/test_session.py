@@ -22,7 +22,7 @@ POLICY = Policy(
 CONTEXT = PolicyContext(observed_at=NOW, facts={"ready": True})
 
 
-def make_command(\n    *, actor_id: str = "operator", command_id: UUID | None = None\n) -> CommandEnvelope:
+def make_command(*, actor_id: str = "operator", command_id: UUID | None = None) -> CommandEnvelope:
     return CommandEnvelope(
         command_id=command_id or uuid4(),
         command="demo.start",
