@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .models import (
@@ -23,7 +23,7 @@ def evaluate(
     now: datetime | None = None,
 ) -> DecisionEvidence:
     """Evaluate policy only; never execute or actuate the command."""
-    evaluated_at = now or datetime.now(timezone.utc)
+    evaluated_at = now or datetime.now(UTC)
     if evaluated_at.tzinfo is None or evaluated_at.utcoffset() is None:
         raise ValueError("now must be timezone-aware")
 
