@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sentinel_interlock.ledger import InMemoryEvidenceLedger
 from sentinel_interlock.models import DecisionEvidence, DecisionStatus
 
-NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def make_entry() -> DecisionEvidence:
