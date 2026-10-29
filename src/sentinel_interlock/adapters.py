@@ -10,7 +10,13 @@ from datetime import datetime
 from typing import Any
 
 from .engine import evaluate
-from .models import (\n    CommandEnvelope,\n    DecisionEvidence,\n    Policy,\n    PolicyCondition,\n    PolicyContext,\n)
+from .models import (
+    CommandEnvelope,
+    DecisionEvidence,
+    Policy,
+    PolicyCondition,
+    PolicyContext,
+)
 
 RAILWAY_POLICY = Policy(
     policy_id="railway-simulation-movement",
