@@ -22,7 +22,7 @@
 
 ## Milestone 3 — Engineering assurance
 
-- [ ] Expand state-transition models and invariants.
+- [x] Expand state-transition models and invariants.
 - [ ] Add fault injection and broader fuzz/property tests.
 - [ ] Add secret scanning and review CI action pinning.
 - [ ] Trace risks to tests and architecture decisions.
