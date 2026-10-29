@@ -1,5 +1,8 @@
 from datetime import UTC, datetime, timedelta
 
+import pytest
+from pydantic import ValidationError
+
 from sentinel_interlock.engine import evaluate
 from sentinel_interlock.models import (
     CommandEnvelope,
@@ -51,17 +54,13 @@ def test_explicit_preconditions_allow() -> None:
 
 
 def test_missing_actor_denies_by_default() -> None:
-    result = evaluate(
-        build_command(actor_id=None), build_context(), build_policy(), now=NOW
-    )
+    result = evaluate(build_command(actor_id=None), build_context(), build_policy(), now=NOW)
     assert result.status is DecisionStatus.DENY
     assert ReasonCode.AUTHENTICATION_REQUIRED in result.reason_codes
 
 
 def test_unauthorized_actor_is_denied() -> None:
-    result = evaluate(
-        build_command(actor_id="unknown"), build_context(), build_policy(), now=NOW
-    )
+    result = evaluate(build_command(actor_id="unknown"), build_context(), build_policy(), now=NOW)
     assert ReasonCode.ACTOR_NOT_AUTHORIZED in result.reason_codes
 
 
@@ -76,9 +75,7 @@ def test_unknown_command_is_denied() -> None:
 
 
 def test_missing_context_fact_denies() -> None:
-    result = evaluate(
-        build_command(), build_context(facts={}), build_policy(), now=NOW
-    )
+    result = evaluate(build_command(), build_context(facts={}), build_policy(), now=NOW)
     assert result.status is DecisionStatus.DENY
     assert ReasonCode.CONTEXT_MISSING in result.reason_codes
 
@@ -104,21 +101,20 @@ def test_failed_condition_denies_and_explains_fact() -> None:
     ]
 
 
-def test_malformed_policy_condition_denies() -> None:
-    policy = build_policy(required_conditions=({"fact": "system_ready"},))
-    result = evaluate(build_command(), build_context(), policy, now=NOW)
-    assert result.status is DecisionStatus.DENY
-    assert ReasonCode.POLICY_CONFIGURATION_INVALID in result.reason_codes
+def test_malformed_policy_condition_is_rejected_at_construction() -> None:
+    with pytest.raises(ValidationError):
+        build_policy(required_conditions=({"fact": "system_ready"},))
+
+
+def test_blank_policy_members_are_rejected() -> None:
+    with pytest.raises(ValidationError):
+        build_policy(allowed_commands=frozenset({"demo.start", " "}))
 
 
 def test_naive_evaluation_time_is_rejected() -> None:
     naive = datetime(2026, 1, 1, 12, 0)
-    try:
+    with pytest.raises(ValueError, match="timezone-aware"):
         evaluate(build_command(), build_context(), build_policy(), now=naive)
-    except ValueError as exc:
-        assert "timezone-aware" in str(exc)
-    else:
-        raise AssertionError("Expected naive evaluation time to be rejected")
 
 
 def test_evaluation_never_executes_commands() -> None:

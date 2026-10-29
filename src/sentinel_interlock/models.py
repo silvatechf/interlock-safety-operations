@@ -1,4 +1,4 @@
-"""Validated domain-neutral request, policy, context, and decision models."""
+"""Validated domain-neutral request, context, policy, and decision models."""
 
 from __future__ import annotations
 
@@ -61,8 +61,16 @@ class PolicyContext(BaseModel):
         return value
 
 
+class PolicyCondition(BaseModel):
+    """A simple equality precondition in a declarative policy."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    fact: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_.:-]+$")
+    equals: Any
+
+
 class Policy(BaseModel):
-    """Illustrative declarative policy used by the reference evaluator."""
+    """Illustrative declarative policy; malformed conditions fail validation."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     policy_id: str = Field(min_length=1, max_length=128)
@@ -71,7 +79,14 @@ class Policy(BaseModel):
     authorized_actors: frozenset[str] = frozenset()
     required_facts: frozenset[str] = frozenset()
     max_context_age_seconds: int = Field(default=5, ge=0, le=86400)
-    required_conditions: tuple[dict[str, Any], ...] = ()
+    required_conditions: tuple[PolicyCondition, ...] = ()
+
+    @field_validator("allowed_commands", "authorized_actors", "required_facts")
+    @classmethod
+    def reject_empty_members(cls, values: frozenset[str]) -> frozenset[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("set entries must not be empty or whitespace")
+        return values
 
 
 class DecisionEvidence(BaseModel):

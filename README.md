@@ -56,6 +56,7 @@ Early foundation. Tests demonstrate only the software properties they cover, not
 - [Architecture](docs/architecture.md)
 - [Threat model](docs/threat-model.md)
 - [Safety boundary and hazards](docs/safety-boundary.md)
+- [Simulation scenarios](docs/simulations.md)
 - [Roadmap](docs/roadmap.md)
 - [Documentación en español](docs/es/README.md)
 
