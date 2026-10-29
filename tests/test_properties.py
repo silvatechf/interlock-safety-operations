@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from sentinel_interlock.engine import evaluate
 from sentinel_interlock.models import (
