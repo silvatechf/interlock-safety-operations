@@ -12,7 +12,7 @@ def make_entry() -> DecisionEvidence:
         command_id=uuid4(),
         policy_id="policy",
         policy_version="1",
-        status=DecisionStatus.DENY,
+        status=DecisionStatus.ALLOW,
         reason_codes=(),
         context_observed_at=NOW,
         evaluated_at=NOW,
