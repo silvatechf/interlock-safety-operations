@@ -49,7 +49,7 @@ mypy src
 
 ## Status
 
-Early foundation. Tests demonstrate only the software properties they cover, not operational safety or suitability.
+Portfolio-stage reference implementation. Tests demonstrate only the software properties they cover, not operational safety or suitability.
 
 ## Docs
 
