@@ -11,7 +11,7 @@
 - [x] Add initial property-based tests for deny-by-default behavior.
 - [x] Validate malformed policy conditions and blank policy entries at construction.
 - [x] Add process-local duplicate-command detection with explicit lifecycle limits.
-- [ ] Define versioned evidence serialization.
+- [x] Define versioned evidence serialization.
 
 ## Milestone 2 — Simulators
 
