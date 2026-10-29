@@ -25,7 +25,7 @@
 - [x] Expand state-transition models and invariants.
 - [ ] Add fault injection and broader fuzz/property tests.
 - [x] Add secret scanning and review CI action pinning.
-- [ ] Trace risks to tests and architecture decisions.
+- [x] Trace risks to tests and architecture decisions.
 - [ ] Independent review of claims and scope.
 
 ## Release gate
