@@ -22,12 +22,33 @@ El proyecto combina un núcleo genérico de evaluación de políticas con adapta
 - `docs/`: arquitectura, amenazas, límites de seguridad y hoja de ruta.
 - `.github/workflows/`: integración continua, análisis estático y auditoría de dependencias.
 
-## Ejecutar la demostración
+## Primer uso y demostración
 
-Con Python 3.12 y las dependencias de desarrollo instaladas:
+Requisitos: Git y Python 3.12. Clona el repositorio y entra en su directorio:
+
+```shell
+git clone https://github.com/silvatechf/interlock-safety-operations.git
+cd interlock-safety-operations
+```
+
+**Windows PowerShell:**
 
 ```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
 python examples/demo.py
+pytest
+```
+
+**macOS / Linux (Bash o shell compatible):**
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python examples/demo.py
+pytest
 ```
 
 La demostración muestra una decisión ilustrativa `ALLOW` y dos `DENY`, con códigos de motivo y evidencia JSON versionada. Los identificadores y las marcas de tiempo varían entre ejecuciones. Los datos son afirmaciones sintéticas, no datos de sensores confiables; no se ejecuta ningún comando ni se contacta con sistemas externos. Un resultado `ALLOW` no constituye una garantía de seguridad real.
