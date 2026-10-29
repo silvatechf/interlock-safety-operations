@@ -72,10 +72,24 @@ class EvidenceChain:
 
     @staticmethod
     def verify(records: Iterable[EvidenceChainRecord]) -> bool:
-        """Return whether sequence, links, payloads, and hashes form a valid chain."""
+        """Return whether records form a valid chain; malformed inputs fail closed."""
+        try:
+            iterator = iter(records)
+        except TypeError:
+            return False
+
         previous_hash = GENESIS_HASH
-        for expected_sequence, record in enumerate(records):
-            if record.sequence != expected_sequence:
+        for expected_sequence, record in enumerate(iterator):
+            if not isinstance(record, EvidenceChainRecord):
+                return False
+            if (
+                not isinstance(record.sequence, int)
+                or isinstance(record.sequence, bool)
+                or record.sequence != expected_sequence
+                or not isinstance(record.previous_hash, str)
+                or not isinstance(record.payload, str)
+                or not isinstance(record.record_hash, str)
+            ):
                 return False
             if record.previous_hash != previous_hash:
                 return False
@@ -85,7 +99,7 @@ class EvidenceChain:
                 expected_hash = _record_hash(
                     record.sequence, record.previous_hash, record.payload
                 )
-            except (TypeError, ValueError, UnicodeError):
+            except (TypeError, ValueError, UnicodeError, RecursionError):
                 return False
             if record.record_hash != expected_hash:
                 return False
