@@ -22,12 +22,13 @@ def evaluate(
     *,
     now: datetime | None = None,
 ) -> DecisionEvidence:
-    """Evaluate a policy without executing or actuating the command."""
+    """Evaluate policy only; never execute or actuate the command."""
     evaluated_at = now or datetime.now(timezone.utc)
     if evaluated_at.tzinfo is None or evaluated_at.utcoffset() is None:
         raise ValueError("now must be timezone-aware")
 
     reasons: list[ReasonCode] = []
+    # This is an illustrative allow-list assertion, not real authentication.
     if command.actor_id is None:
         reasons.append(ReasonCode.AUTHENTICATION_REQUIRED)
     elif command.actor_id not in policy.authorized_actors:
