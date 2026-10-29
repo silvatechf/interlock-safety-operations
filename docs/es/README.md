@@ -32,6 +32,17 @@ python examples/demo.py
 
 La demostración muestra una decisión ilustrativa `ALLOW` y dos `DENY`, con códigos de motivo y evidencia JSON versionada. Los identificadores y las marcas de tiempo varían entre ejecuciones. Los datos son afirmaciones sintéticas, no datos de sensores confiables; no se ejecuta ningún comando ni se contacta con sistemas externos. Un resultado `ALLOW` no constituye una garantía de seguridad real.
 
+## Prácticas de ingeniería demostradas
+
+- **Python con tipos y modelos validados:** modelos de solicitudes, políticas y evidencias con Pydantic.
+- **Evaluación defensiva:** listas de autorización explícitas, control de vigencia, comprobación de datos obligatorios y motivos de denegación.
+- **Verificación automatizada:** pruebas unitarias con pytest y pruebas basadas en propiedades con Hypothesis para invariantes seleccionados.
+- **Calidad del código:** análisis con Ruff y comprobación estricta de tipos con mypy.
+- **Higiene de seguridad:** análisis estático con Bandit, auditoría de dependencias con pip-audit, detección de secretos con GitGuardian y acciones de GitHub fijadas por SHA completo.
+- **Trazabilidad de riesgos:** relación documentada entre riesgos seleccionados, mitigaciones, pruebas concretas, arquitectura y limitaciones pendientes.
+
+Estas prácticas describen lo implementado en este repositorio; no significan que todos los riesgos estén eliminados ni que exista una verificación independiente.
+
 Es un proyecto de portfolio local-first, no un producto de control operativo. Las pruebas solo demuestran las propiedades verificadas; no demuestran seguridad real ni certificación.
 
 ## Documentación adicional
