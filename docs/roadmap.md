@@ -24,7 +24,7 @@
 
 - [x] Expand state-transition models and invariants.
 - [ ] Add fault injection and broader fuzz/property tests.
-- [ ] Add secret scanning and review CI action pinning.
+- [x] Add secret scanning and review CI action pinning.
 - [ ] Trace risks to tests and architecture decisions.
 - [ ] Independent review of claims and scope.
 
