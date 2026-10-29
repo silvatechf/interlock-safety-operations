@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from .models import DecisionEvidence
-from .serialization import serialize_evidence
+from .serialization import deserialize_evidence, serialize_evidence
 
 CHAIN_SCHEMA_VERSION = 1
 GENESIS_HASH = "0" * 64
@@ -81,8 +81,6 @@ class EvidenceChain:
                 return False
             try:
                 # Validate the evidence envelope as well as its committed bytes.
-                from .serialization import deserialize_evidence
-
                 deserialize_evidence(record.payload)
                 expected_hash = _record_hash(
                     record.sequence, record.previous_hash, record.payload
