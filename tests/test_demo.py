@@ -1,9 +1,9 @@
+import os
 import subprocess
 import sys
-from pathlib import Path
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def test_portfolio_demo_reports_expected_synthetic_decisions() -> None:
