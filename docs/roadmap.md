@@ -12,6 +12,8 @@
 - [x] Validate malformed policy conditions and blank policy entries at construction.
 - [x] Add process-local duplicate-command detection with explicit lifecycle limits.
 - [x] Define versioned evidence serialization.
+- [x] Reject ambiguous, non-standard, and oversized evidence JSON.
+- [x] Add an in-memory SHA-256 hash chain with tamper-detection tests and documented limits.
 
 ## Milestone 2 — Simulators
 
@@ -27,6 +29,13 @@
 - [x] Add secret scanning and review CI action pinning.
 - [x] Trace risks to tests and architecture decisions.
 - [x] Repository-level review of public claims and scope (self-review; not an external independent assessment).
+
+## Next security milestones
+
+- [ ] Add independently retained checkpoints or signed evidence; define key custody and recovery before claiming authenticated integrity.
+- [ ] Evaluate durable append-only storage, crash consistency, and concurrency behavior.
+- [ ] Expand adversarial tests for final-suffix truncation and whole-chain rewrite.
+- [ ] Add a local inspection UI for synthetic scenarios and evidence verification.
 
 ## Deferred by design
 
