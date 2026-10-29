@@ -7,8 +7,8 @@ import pytest
 from sentinel_interlock.models import DecisionEvidence, DecisionStatus, ReasonCode
 from sentinel_interlock.serialization import (
     EVIDENCE_SCHEMA_VERSION,
-    EvidenceSerializationError,
     MAX_EVIDENCE_PAYLOAD_BYTES,
+    EvidenceSerializationError,
     deserialize_evidence,
     serialize_evidence,
 )
