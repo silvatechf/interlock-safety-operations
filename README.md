@@ -70,14 +70,14 @@ For each scenario, the script prints stable reason codes and versioned evidence 
 
 ## Engineering practices demonstrated
 
-- **Typed Python design:** validated request, policy, and evidence models with Pydantic.
-- **Defensive policy evaluation:** explicit allow-lists, freshness checks, required facts, and explainable deny reasons.
-- **Automated verification:** pytest unit tests and Hypothesis property-based tests for selected invariants.
-- **Code-quality gates:** Ruff linting and mypy strict type checking.
-- **Security hygiene:** Bandit static analysis, pip-audit dependency checks, GitGuardian secret scanning, and GitHub Actions pinned to full commit SHAs.
-- **Risk traceability:** documented links between selected risks, mitigations, named tests, architecture, and residual limitations.
+- **Typed Python design:** validated models in [`models.py`](src/sentinel_interlock/models.py).
+- **Defensive policy evaluation:** allow-lists, freshness checks, required facts, and explainable deny reasons in [`engine.py`](src/sentinel_interlock/engine.py).
+- **Automated verification:** [Hypothesis property tests](tests/test_properties.py), [evidence serialization tests](tests/test_serialization.py), and [session/replay tests](tests/test_session.py).
+- **Code-quality gates:** Ruff linting and strict mypy checking, configured in [`pyproject.toml`](pyproject.toml).
+- **Security hygiene:** Bandit static analysis, pip-audit dependency checks, GitGuardian secret scanning, and GitHub Actions pinned to full commit SHAs in [the CI workflow](.github/workflows/ci.yml).
+- **Risk traceability:** [risk-to-test matrix](docs/risk-traceability.md) linking selected risks, mitigations, named tests, architecture, and residual limitations.
 
-These are examples of engineering practices implemented in this repository, not a claim that all risks are eliminated or that the system is independently verified.
+These links let reviewers inspect the implementation behind each claim. They describe practices present in this repository, not a claim that all risks are eliminated or that the system is independently verified.
 
 ## Status
 
