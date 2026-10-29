@@ -1,5 +1,7 @@
 """Validated domain-neutral request, policy, context, and decision models."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any
