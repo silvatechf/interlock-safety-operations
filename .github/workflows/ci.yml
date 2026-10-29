@@ -30,6 +30,8 @@ jobs:
         run: mypy src
       - name: Tests
         run: pytest
+      - name: Smoke-test portfolio demo
+        run: python examples/demo.py
       - name: Static security analysis
         run: bandit -q -r src
       - name: Dependency audit
