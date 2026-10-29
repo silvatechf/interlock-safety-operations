@@ -1,10 +1,10 @@
 # Sentinel Interlock
 
-**Policy enforcement for safety-critical operations.**
+**A local-first policy-evaluation reference for safety-focused simulations.**
 
 An experimental, local-first reference implementation for evaluating whether an operational command should be permitted under explicit policy, authorization, state, freshness, and evidence constraints.
 
-The MVP combines a generic policy-enforcement core with domain-specific simulation adapters. Initial examples are a railway-inspired simulator and generic IT operations.
+The portfolio MVP combines a generic policy-evaluation core with domain-specific simulation adapters. Examples cover a railway-inspired scenario and generic IT operations, using synthetic inputs only.
 
 > **Safety boundary:** This is a research and portfolio MVP, not a railway interlocking, train protection system, industrial safety controller, or certified safety component. Never connect it to operational signalling, braking, dispatch, PLCs, production systems, or other safety-critical infrastructure. A demo decision is not a real-world safety guarantee.
 
@@ -57,6 +57,9 @@ Early foundation. Tests demonstrate only the software properties they cover, not
 - [Threat model](docs/threat-model.md)
 - [Safety boundary and hazards](docs/safety-boundary.md)
 - [Simulation scenarios](docs/simulations.md)
+- [Risk-to-test traceability](docs/risk-traceability.md)
+- [CI security maintenance](docs/ci-security-maintenance.md)
+- [Portfolio scope review](docs/portfolio-scope-review.md)
 - [Roadmap](docs/roadmap.md)
 - [Documentación en español](docs/es/README.md)
 
