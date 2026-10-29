@@ -8,6 +8,7 @@ from sentinel_interlock.models import DecisionEvidence, DecisionStatus, ReasonCo
 from sentinel_interlock.serialization import (
     EVIDENCE_SCHEMA_VERSION,
     EvidenceSerializationError,
+    MAX_EVIDENCE_PAYLOAD_BYTES,
     deserialize_evidence,
     serialize_evidence,
 )
@@ -57,3 +58,36 @@ def test_unknown_schema_version_is_rejected() -> None:
 def test_malformed_payload_is_rejected(payload: str) -> None:
     with pytest.raises(EvidenceSerializationError):
         deserialize_evidence(payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"schema_version":1,"schema_version":1,"decision":{}}',
+        '{"schema_version":1,"decision":{"status":"allow","status":"deny"}}',
+    ],
+)
+def test_duplicate_json_keys_are_rejected(payload: str) -> None:
+    with pytest.raises(EvidenceSerializationError, match="duplicate JSON key"):
+        deserialize_evidence(payload)
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_nonstandard_json_constants_are_rejected(constant: str) -> None:
+    payload = f'{{"schema_version":1,"decision":{{"evidence":{{"value":{constant}}}}}}}'
+    with pytest.raises(EvidenceSerializationError, match="non-standard JSON constant"):
+        deserialize_evidence(payload)
+
+
+def test_oversized_payload_is_rejected() -> None:
+    payload = " " * (MAX_EVIDENCE_PAYLOAD_BYTES + 1)
+    with pytest.raises(EvidenceSerializationError, match="maximum payload size"):
+        deserialize_evidence(payload)
+
+
+def test_non_finite_evidence_is_rejected_on_serialization() -> None:
+    decision = make_decision().model_copy(
+        update={"evidence": {"nested": [float("nan")]}}
+    )
+    with pytest.raises(EvidenceSerializationError, match="non-finite"):
+        serialize_evidence(decision)
