@@ -17,10 +17,10 @@ This matrix links selected risks to the implementation evidence available in thi
 
 ## Highest-priority gaps for this portfolio MVP
 
-1. **Fault injection and broader properties:** exercise exceptions and failure boundaries around evaluation and ledger recording, using synthetic inputs only.
+1. **Fault injection and broader properties (deferred):** additional exception and failure-boundary coverage around evaluation and ledger recording remains optional follow-up work for this portfolio scope.
 2. **Durability and concurrency:** current replay protection and evidence ledger are process-local; no persistence or cross-process guarantees are claimed.
 3. **Trust and governance:** real authentication, trusted fact provenance, trustworthy time, and policy change controls are not implemented.
-4. **Independent review:** check that the README, safety boundary, demos and roadmap do not overstate what the implementation proves.
+4. **External review (not performed):** a reviewer independent of this implementation should still assess claims and scope before any stronger assurance claims are made.
 
 ## How to interpret this matrix
 
