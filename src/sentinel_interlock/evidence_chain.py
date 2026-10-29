@@ -71,7 +71,7 @@ class EvidenceChain:
         return tuple(self._records)
 
     @staticmethod
-    def verify(records: Iterable[EvidenceChainRecord]) -> bool:
+    def verify(records: Iterable[object]) -> bool:
         """Return whether records form a valid chain; malformed inputs fail closed."""
         try:
             iterator = iter(records)
@@ -84,7 +84,6 @@ class EvidenceChain:
                 return False
             if (
                 type(record.sequence) is not int
-                or isinstance(record.sequence, bool)
                 or record.sequence != expected_sequence
                 or not isinstance(record.previous_hash, str)
                 or not isinstance(record.payload, str)
