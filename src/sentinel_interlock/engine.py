@@ -49,19 +49,17 @@ def evaluate(
 
     failed_conditions: list[dict[str, Any]] = []
     for condition in policy.required_conditions:
-        fact_name = condition.get("fact")
-        if not isinstance(fact_name, str) or "equals" not in condition:
-            reasons.append(ReasonCode.POLICY_CONFIGURATION_INVALID)
-            continue
+        fact_name = condition.fact
+        expected = condition.equals
         if fact_name not in context.facts:
             reasons.append(ReasonCode.PRECONDITION_FAILED)
             failed_conditions.append({"fact": fact_name, "reason": "missing"})
-        elif context.facts[fact_name] != condition["equals"]:
+        elif context.facts[fact_name] != expected:
             reasons.append(ReasonCode.PRECONDITION_FAILED)
             failed_conditions.append(
                 {
                     "fact": fact_name,
-                    "expected": condition["equals"],
+                    "expected": expected,
                     "actual": context.facts[fact_name],
                 }
             )
