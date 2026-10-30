@@ -8,7 +8,7 @@ The product is **domain-agnostic at its core**. Transportation is the first appl
 
 The central question is: given an event, its declared source, timing, integrity metadata, and surrounding synthetic context, can Kernveil identify what is valid, stale, duplicated, contradictory, or uncertain, explain the result, and avoid presenting uncertainty as fact?
 
-This is a design proposal. Capabilities below are planned unless explicitly implemented elsewhere in the repository.
+This is a design proposal. The current implementation status is called out explicitly below.
 
 ## Product boundary
 
@@ -17,19 +17,6 @@ Kernveil is an independent event-validation and resilience-testing layer in a si
 The prototype will ingest synthetic events and simulated states; validate structure, source claims, integrity metadata, sequence, freshness, and consistency; evaluate explicit policies; inject selected faults; and produce repeatable evidence and reports.
 
 It will not connect to live road infrastructure, traffic-light controllers, vehicles, aircraft, vessels, railway networks, telemetry, signalling, dispatch, PLC/SCADA, braking, or production systems. It will not send commands, actuate equipment, direct vehicles, or make operational decisions. It will not claim zero risk, complete attack prevention, certification, or regulatory conformity.
-
-## Domain strategy
-
-The common core provides reusable technical primitives. Domain adapters define event meaning, context, constraints, and scenario-specific expected outcomes.
-
-| Domain | Example synthetic event | First demonstrable question |
-|---|---|---|
-| Road transport | Traffic light outage, collision report, road closure, hazard report | Are reports fresh, non-duplicated, sufficiently corroborated, and consistent before an advisory is shown? |
-| Rail | Track occupancy assertion, service disruption, communications loss | Are synthetic state messages fresh, ordered, and mutually consistent? |
-| Aviation | Weather update, NOTAM-like advisory fixture, simulated subsystem alert | Is the information current, correctly scoped, and internally consistent? |
-| Maritime | Navigation hazard report, position update, communications outage | Are event age, source claims, sequence, and conflicting reports handled explicitly? |
-
-These are simulation examples, not validated operational rules. In particular, Kernveil must not infer that a traffic light is safe to cross, calculate aircraft separation, direct a vessel, or authorize train movement.
 
 ## Proposed logical architecture
 
@@ -49,25 +36,39 @@ flowchart TD
     H --> I["Local evidence and scenario report"]
 ```
 
-This is conceptual, not a deployed operational architecture. The current policy engine and evidence contracts are the starting foundation. Event ingress, trust validation, correlation, fault injection, and the inspection interface are future work.
+This is conceptual, not a deployed operational architecture. The current policy engine and event validator are the starting foundation. Correlation, fault injection, domain adapters beyond existing examples, and the inspection interface remain future work.
+
+## Implemented foundation
+
+The new `sentinel_interlock.events` module currently provides:
+- a versioned, validated synthetic event envelope;
+- timezone-aware event timestamps and expiry consistency;
+- caller-supplied source allow-list checks;
+- deterministic payload SHA-256 calculation over canonical JSON;
+- event freshness and expiry checks;
+- duplicate event ID and non-advancing sequence checks against caller-supplied state;
+- explicit VALID, REJECTED, and INDETERMINATE outcomes with stable reason codes;
+- rejection of malformed/non-JSON and oversized payloads.
+
+These are bounded validation checks, not authenticated source identity or trusted sensor provenance. The validator is stateless: callers supply replay state, and the module does not persist or update it. A digest is not a signature. The module does not yet correlate reports, establish independent corroboration, inject faults, or provide road/rail/aviation/maritime operational semantics.
 
 ## Proposed components
 
 ### Synthetic event envelope
 
-Define a versioned envelope with event ID, source identifier, event type, schema version, sequence number, event and observation timestamps, expiry or validity window, payload digest, correlation ID, and simulation scenario ID.
+Implemented as `OperationalEvent` in `src/sentinel_interlock/events.py`. It contains schema version, event ID, claimed source ID, event type, sequence, occurrence and optional expiry timestamps, payload, and optional payload digest.
 
 A claimed source identifier is not authenticated identity. A digest detects content changes only when the expected digest is trusted; it does not authenticate the sender. Signature verification, if introduced, must use test-only keys and an explicit key lifecycle.
 
 ### Trust and freshness validator
 
-Evaluate schema validity, source allow-list, event age and expiry, sequence continuity, duplicate IDs, payload digest consistency, and clock uncertainty assumptions. Missing, contradictory, expired, or unverifiable required evidence must not be silently treated as valid.
+Implemented as `validate_event()`. It evaluates schema validity, source allow-list, event age and expiry, sequence continuity, duplicate IDs, and payload digest consistency. Replay state and trust configuration are caller-supplied and process-local unless a future persistence layer is added.
 
-Time checks must model clock uncertainty rather than assuming timestamps are inherently trustworthy. The validator should distinguish invalid, stale, unknown, and indeterminate results instead of collapsing them into a misleading boolean.
+Time checks must model clock uncertainty rather than assuming timestamps are inherently trustworthy. The current implementation marks events too far in the future as INDETERMINATE; stale or expired events are REJECTED.
 
 ### Correlation and anomaly rules
 
-Start with deterministic, explainable checks:
+Planned deterministic checks:
 - duplicate or replayed events;
 - out-of-order sequence numbers and unexpected gaps;
 - delayed or expired events;
@@ -85,19 +86,15 @@ Adapters translate domain-specific event types into explicit context and policy 
 
 A road adapter may classify information for an advisory demonstration, but it must not tell a driver to proceed through an intersection or override road signs, traffic lights, emergency services, or official instructions. Railway, aviation, and maritime adapters remain separate follow-on work with synthetic fixtures only.
 
-### Policy evaluation
-
-Reuse the existing deterministic policy engine where appropriate. Extend input contracts only after defining invariants and tests. The engine remains non-actuating and domain-neutral; domain-specific assumptions belong in simulation adapters.
-
 ### Fault-injection controller
 
-Allow a demo operator to inject controlled faults into synthetic events: latency and jitter, event loss, duplication and replay, reordering, payload corruption, source outage, contradictory state, clock skew, partial service failure, and recovery bursts.
+Planned controlled faults include latency and jitter, event loss, duplication and replay, reordering, payload corruption, source outage, contradictory state, clock skew, partial service failure, and recovery bursts.
 
 Each scenario defines initial conditions, injected fault, expected detection, expected advisory/review outcome, evidence assertions, and known blind spots.
 
 ### Evidence and reporting
 
-Produce a local report containing scenario configuration, injected events, observed events, validation results, policy outcome, reason codes, timing measurements, and evidence-chain verification result.
+Planned local reports will contain scenario configuration, injected events, observed events, validation results, policy outcome, reason codes, timing measurements, and evidence-chain verification result.
 
 The current SHA-256 chain is in-memory and unauthenticated. A future durable evidence design must consider signed checkpoints or independently retained anchors, key custody, crash consistency, and truncation detection. A hash chain alone is not proof of authenticity or tamper-proof storage.
 
@@ -135,15 +132,17 @@ Every metric must state its test corpus, environment, assumptions, and limitatio
 ## Delivery plan
 
 ### Phase 1 — Contracts and threat model
-- [ ] Define a versioned event envelope and trust assumptions.
-- [ ] Define source claims, integrity, freshness, sequence, correlation, and clock uncertainty.
-- [ ] Map threats to explicit invariants and test cases.
-- [ ] Document behavior for indeterminate and contradictory inputs.
+- [x] Define a versioned synthetic event envelope.
+- [x] Define caller-supplied source allow-list, integrity, freshness, sequence, replay, and clock-skew behavior for the initial validator.
+- [ ] Define durable source identity, trust lifecycle, correlation, and trusted clock assumptions.
+- [ ] Map remaining threats to explicit invariants and test cases.
+- [x] Document behavior for stale, expired, replayed, invalid, and indeterminate inputs.
 
 ### Phase 2 — Deterministic event validator
-- [ ] Implement structural, digest, sequence, replay, freshness, and correlation checks.
-- [ ] Return stable reason codes and structured evidence.
-- [ ] Add property-based tests for malformed, duplicated, reordered, stale, and contradictory events.
+- [x] Implement structural, digest, sequence, replay, and freshness checks.
+- [x] Return stable reason codes and structured validation evidence.
+- [x] Add tests for malformed, duplicated, non-advancing, stale, expired, future-dated, and digest-mismatched events.
+- [ ] Add broader property-based tests and fuzzing for event inputs.
 
 ### Phase 3 — Road-disruption simulator
 - [ ] Add deterministic synthetic event producers and fixtures.
@@ -153,7 +152,7 @@ Every metric must state its test corpus, environment, assumptions, and limitatio
 - [ ] Add regression fixtures for each documented failure.
 
 ### Phase 4 — Domain adapters
-- [ ] Reuse the core contracts for a railway-inspired adapter.
+- [ ] Reuse the core contracts for a railway-inspired resilience adapter.
 - [ ] Evaluate separate maritime and aviation adapters only after domain-specific threat models and scope reviews.
 - [ ] Keep every adapter synthetic and non-actuating.
 
