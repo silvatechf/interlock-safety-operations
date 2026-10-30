@@ -7,12 +7,11 @@ way, recommends a route, instructs a driver, or controls road infrastructure.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Any
 
 from .events import (
-    EventReasonCode,
     EventValidationResult,
     EventValidationStatus,
     OperationalEvent,
@@ -104,14 +103,16 @@ def evaluate_road_scenario(scenario: RoadScenario) -> RoadScenarioResult:
             if claim is not None:
                 subject, state = claim
                 claims_by_subject.setdefault(subject, set()).add(state)
-            if event.event_type == "road.traffic_signal.status":
-                if event.payload.get("state") == "offline":
-                    findings.extend(
-                        (
-                            RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED,
-                            RoadFindingCode.HUMAN_REVIEW_REQUIRED,
-                        )
+            if (
+                event.event_type == "road.traffic_signal.status"
+                and event.payload.get("state") == "offline"
+            ):
+                findings.extend(
+                    (
+                        RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED,
+                        RoadFindingCode.HUMAN_REVIEW_REQUIRED,
                     )
+                )
         elif result.status is EventValidationStatus.REJECTED:
             findings.append(RoadFindingCode.EVENT_REJECTED)
         else:
