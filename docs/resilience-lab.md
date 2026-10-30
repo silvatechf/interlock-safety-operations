@@ -2,97 +2,119 @@
 
 ## Purpose
 
-Kernveil Resilience Lab is the proposed next-stage portfolio prototype for evaluating communication trust and operational resilience in safety-sensitive environments. Railway operations are the first synthetic demonstration domain, not the product's only possible domain.
+Kernveil Resilience Lab is a local-first research and portfolio prototype for evaluating the trustworthiness of synthetic operational events and testing resilience under explicitly modelled failures.
 
-The lab explores this question: given a synthetic operational message and the evidence available to the evaluator, can the platform detect that the message or its context is not trustworthy, explain why, and fail safely without executing an operation?
+The product is **domain-agnostic at its core**. Transportation is the first application family, with road incidents and infrastructure disruption as the first demonstrator. Railway, aviation, and maritime scenarios can follow as separate adapters. The same validation primitives may later apply to other critical or high-availability environments, but each domain requires its own threat model, semantics, risk analysis, and qualified review.
 
-This is a design proposal. The capabilities below are planned unless explicitly implemented elsewhere in this repository.
+The central question is: given an event, its declared source, timing, integrity metadata, and surrounding synthetic context, can Kernveil identify what is valid, stale, duplicated, contradictory, or uncertain, explain the result, and avoid presenting uncertainty as fact?
+
+This is a design proposal. Capabilities below are planned unless explicitly implemented elsewhere in the repository.
 
 ## Product boundary
 
-Kernveil is an independent verification and resilience-testing layer in a simulation environment. It is not a replacement for railway signalling, interlocking, train protection, traffic management, communications infrastructure, or operator procedures.
+Kernveil is an independent event-validation and resilience-testing layer in a simulation environment. It is not a navigation service, traffic-management platform, dispatch system, certified safety component, or replacement for domain operators and procedures.
 
-The prototype will ingest synthetic messages and simulated states; validate structure, origin claims, integrity metadata, sequence, freshness, and consistency; evaluate explicit policies; detect selected communication and component failure modes; and produce repeatable evidence and reports.
+The prototype will ingest synthetic events and simulated states; validate structure, source claims, integrity metadata, sequence, freshness, and consistency; evaluate explicit policies; inject selected faults; and produce repeatable evidence and reports.
 
-It will not connect to live railway networks, telemetry, signalling, dispatch, PLC/SCADA, braking, or production systems. It will not send commands, actuate equipment, or make operational decisions. It will not claim zero risk, complete attack prevention, certification, or regulatory conformity.
+It will not connect to live road infrastructure, traffic-light controllers, vehicles, aircraft, vessels, railway networks, telemetry, signalling, dispatch, PLC/SCADA, braking, or production systems. It will not send commands, actuate equipment, direct vehicles, or make operational decisions. It will not claim zero risk, complete attack prevention, certification, or regulatory conformity.
+
+## Domain strategy
+
+The common core provides reusable technical primitives. Domain adapters define event meaning, context, constraints, and scenario-specific expected outcomes.
+
+| Domain | Example synthetic event | First demonstrable question |
+|---|---|---|
+| Road transport | Traffic light outage, collision report, road closure, hazard report | Are reports fresh, non-duplicated, sufficiently corroborated, and consistent before an advisory is shown? |
+| Rail | Track occupancy assertion, service disruption, communications loss | Are synthetic state messages fresh, ordered, and mutually consistent? |
+| Aviation | Weather update, NOTAM-like advisory fixture, simulated subsystem alert | Is the information current, correctly scoped, and internally consistent? |
+| Maritime | Navigation hazard report, position update, communications outage | Are event age, source claims, sequence, and conflicting reports handled explicitly? |
+
+These are simulation examples, not validated operational rules. In particular, Kernveil must not infer that a traffic light is safe to cross, calculate aircraft separation, direct a vessel, or authorize train movement.
 
 ## Proposed logical architecture
 
 ```mermaid
 flowchart TD
-    A["Synthetic producers / simulated subsystems"] --> B["Message ingress"]
-    B --> C["Trust validation"]
-    C --> D["Communication anomaly checks"]
-    D --> E["Kernveil policy engine"]
-    E --> F["Resilience scenario controller"]
-    F --> G["Decision and evidence output"]
-    G --> H["Local inspection and test report"]
-    I["Fault injector"] --> A
-    I --> B
-    I --> C
-    I --> D
-    I --> E
+    A["Synthetic event producers / scenario fixtures"] --> B["Event ingress and schema validation"]
+    B --> C["Trust, integrity and freshness checks"]
+    C --> D["Correlation and anomaly rules"]
+    D --> E["Domain adapter and context model"]
+    E --> F["Kernveil policy evaluation core"]
+    G["Deterministic fault injector"] --> A
+    G --> B
+    G --> C
+    G --> D
+    G --> E
+    F --> H["Explainable advisory / review outcome"]
+    H --> I["Local evidence and scenario report"]
 ```
 
-This is conceptual, not a deployed railway or certified safety architecture. The current policy engine and evidence contracts are the starting foundation. Message ingress, trust validation, anomaly checks, fault injection, and the inspection interface are future work.
+This is conceptual, not a deployed operational architecture. The current policy engine and evidence contracts are the starting foundation. Event ingress, trust validation, correlation, fault injection, and the inspection interface are future work.
 
 ## Proposed components
 
-### Synthetic message envelope
+### Synthetic event envelope
 
-Define a versioned envelope with message ID, source identifier, message type, schema version, sequence number, creation and expiry timestamps, payload digest, correlation ID, and simulation scenario ID. Signature metadata may be added in a later phase.
+Define a versioned envelope with event ID, source identifier, event type, schema version, sequence number, event and observation timestamps, expiry or validity window, payload digest, correlation ID, and simulation scenario ID.
 
-A claimed source identifier is not authenticated identity. A digest detects content changes only when the expected digest is trusted; it does not authenticate the sender.
+A claimed source identifier is not authenticated identity. A digest detects content changes only when the expected digest is trusted; it does not authenticate the sender. Signature verification, if introduced, must use test-only keys and an explicit key lifecycle.
 
 ### Trust and freshness validator
 
-Evaluate schema validity, source allow-list, message age and expiry, sequence continuity, duplicate IDs, payload digest consistency, and clock uncertainty assumptions. Optional signature verification can follow using test-only keys and an explicit key lifecycle.
+Evaluate schema validity, source allow-list, event age and expiry, sequence continuity, duplicate IDs, payload digest consistency, and clock uncertainty assumptions. Missing, contradictory, expired, or unverifiable required evidence must not be silently treated as valid.
 
-Missing, contradictory, expired, or unverifiable required evidence must not be silently treated as valid. Time checks must model clock uncertainty rather than assuming timestamps are inherently trustworthy.
+Time checks must model clock uncertainty rather than assuming timestamps are inherently trustworthy. The validator should distinguish invalid, stale, unknown, and indeterminate results instead of collapsing them into a misleading boolean.
 
-### Communication anomaly detector
+### Correlation and anomaly rules
 
 Start with deterministic, explainable checks:
-- duplicate or replayed messages;
+- duplicate or replayed events;
 - out-of-order sequence numbers and unexpected gaps;
-- delayed messages;
-- conflicting state claims from simulated sources;
+- delayed or expired events;
+- conflicting state claims from synthetic sources;
 - malformed or oversized payloads;
 - source or signature validation failures;
-- channel loss, recovery, and retry bursts.
+- channel loss, recovery, and retry bursts;
+- multiple reports that refer to the same simulated incident.
 
-Statistical anomaly detection may be explored later as an advisory signal, never as the sole safety gate.
+Do not equate multiple reports with independent corroboration: their provenance and correlation may be shared. Statistical or ML anomaly detection may be explored later as an advisory signal, never as the sole decision gate.
+
+### Domain adapters
+
+Adapters translate domain-specific event types into explicit context and policy inputs. The first adapter should be road-disruption simulation: traffic-light outage, collision, road closure, debris/hazard report, stale report, duplicate crowd-sourced report, and contradictory reports.
+
+A road adapter may classify information for an advisory demonstration, but it must not tell a driver to proceed through an intersection or override road signs, traffic lights, emergency services, or official instructions. Railway, aviation, and maritime adapters remain separate follow-on work with synthetic fixtures only.
 
 ### Policy evaluation
 
-Reuse the existing deterministic policy engine where appropriate. Extend input contracts only after defining invariants and tests. The engine remains non-actuating and domain-neutral; railway-specific assumptions belong in synthetic scenario adapters.
+Reuse the existing deterministic policy engine where appropriate. Extend input contracts only after defining invariants and tests. The engine remains non-actuating and domain-neutral; domain-specific assumptions belong in simulation adapters.
 
 ### Fault-injection controller
 
-Allow a demo operator to inject controlled faults into synthetic traffic: latency and jitter, message loss, duplication and replay, reordering, payload corruption, source outage, contradictory state, clock skew, partial service failure, and recovery storms.
+Allow a demo operator to inject controlled faults into synthetic events: latency and jitter, event loss, duplication and replay, reordering, payload corruption, source outage, contradictory state, clock skew, partial service failure, and recovery bursts.
 
-Each scenario defines initial conditions, injected fault, expected detection, expected fail-safe outcome, evidence assertions, and known blind spots.
+Each scenario defines initial conditions, injected fault, expected detection, expected advisory/review outcome, evidence assertions, and known blind spots.
 
 ### Evidence and reporting
 
-Produce a local report containing scenario configuration, injected events, observed events, detection results, policy outcome, reason codes, timing measurements, and evidence-chain verification result.
+Produce a local report containing scenario configuration, injected events, observed events, validation results, policy outcome, reason codes, timing measurements, and evidence-chain verification result.
 
 The current SHA-256 chain is in-memory and unauthenticated. A future durable evidence design must consider signed checkpoints or independently retained anchors, key custody, crash consistency, and truncation detection. A hash chain alone is not proof of authenticity or tamper-proof storage.
 
-## Demonstration scenarios
+## Initial road-resilience demonstration scenarios
 
 | Scenario | Injected condition | Expected prototype behavior |
 |---|---|---|
-| Healthy synthetic exchange | Valid, fresh, ordered message | Continue to policy evaluation and report checks |
-| Replay | Previously accepted message ID or sequence repeated | Detect replay and reject the message |
-| Out of order | Sequence arrives behind last accepted sequence | Flag ordering violation and reject or quarantine by explicit policy |
-| Stale message | Message exceeds configured freshness window | Reject as stale; never infer current state |
-| Corrupted payload | Payload no longer matches trusted digest | Reject integrity check |
-| Unknown source | Source absent from simulation trust configuration | Reject or quarantine; do not infer identity |
-| Conflicting state | Synthetic sources report incompatible states | Mark context inconsistent and fail closed pending resolution |
-| Clock skew | Source time is outside configured uncertainty bounds | Mark freshness indeterminate; do not treat as fresh |
-| Channel outage | Messages stop arriving | Detect timeout only within declared simulation assumptions |
-| Recovery storm | Reconnection causes duplicates and bursts | Preserve ordering/replay controls and report overload behavior |
+| Healthy event | Valid, fresh, well-formed road-hazard report | Validate and classify for advisory review |
+| Traffic-light outage | Synthetic infrastructure outage event | Surface outage and uncertainty; never infer right-of-way |
+| Stale report | Report exceeds configured validity window | Mark stale; do not present as current |
+| Duplicate crowd report | Same event submitted repeatedly | Deduplicate or correlate; do not inflate corroboration |
+| Contradictory reports | Sources report incompatible road states | Mark context inconsistent and request review |
+| Unknown source | Source absent from simulation trust configuration | Mark untrusted or unknown; do not infer identity |
+| Corrupted payload | Payload differs from trusted fixture digest | Reject integrity check |
+| Clock skew | Source time outside configured uncertainty bounds | Mark freshness indeterminate |
+| Connectivity outage | Event stream stops arriving | Report loss of observability within declared assumptions |
+| Recovery burst | Reconnection produces duplicate and delayed reports | Preserve replay/order checks and report backlog behavior |
 
 A passing scenario means only that the implementation behaved as specified for that scenario. It does not establish coverage of all failures or attacks.
 
@@ -101,7 +123,8 @@ A passing scenario means only that the implementation behaved as specified for t
 Report measurable results rather than claiming zero risk:
 - detection rate for explicitly enumerated injected cases;
 - false-positive and false-negative counts for the defined test corpus;
-- decision and detection latency under documented local test conditions;
+- duplicate suppression and correlation accuracy for labelled fixtures;
+- event validation and decision latency under documented local test conditions;
 - behavior during outage, recovery, and burst traffic;
 - reproducibility from a fixed scenario seed and configuration;
 - evidence verification success and known truncation/rewrite limitations;
@@ -112,32 +135,38 @@ Every metric must state its test corpus, environment, assumptions, and limitatio
 ## Delivery plan
 
 ### Phase 1 — Contracts and threat model
-- [ ] Define message envelope and versioning.
-- [ ] Define source identity, trust, freshness, sequence, and clock assumptions.
+- [ ] Define a versioned event envelope and trust assumptions.
+- [ ] Define source claims, integrity, freshness, sequence, correlation, and clock uncertainty.
 - [ ] Map threats to explicit invariants and test cases.
-- [ ] Document fail-safe behavior for indeterminate and contradictory inputs.
+- [ ] Document behavior for indeterminate and contradictory inputs.
 
-### Phase 2 — Deterministic communication validator
-- [ ] Implement structural, digest, sequence, replay, and freshness checks.
+### Phase 2 — Deterministic event validator
+- [ ] Implement structural, digest, sequence, replay, freshness, and correlation checks.
 - [ ] Return stable reason codes and structured evidence.
-- [ ] Add property-based tests for malformed, duplicated, reordered, stale, and contradictory messages.
+- [ ] Add property-based tests for malformed, duplicated, reordered, stale, and contradictory events.
 
-### Phase 3 — Fault-injection simulator
-- [ ] Add deterministic synthetic message producers.
+### Phase 3 — Road-disruption simulator
+- [ ] Add deterministic synthetic event producers and fixtures.
+- [ ] Model traffic-light outage, collision, road closure, hazard reports, duplicate reports, and contradictory information.
 - [ ] Add latency, loss, duplication, reordering, corruption, outage, and clock-skew injectors.
 - [ ] Make scenarios reproducible and safe to run offline.
 - [ ] Add regression fixtures for each documented failure.
 
-### Phase 4 — Evidence and inspection
+### Phase 4 — Domain adapters
+- [ ] Reuse the core contracts for a railway-inspired adapter.
+- [ ] Evaluate separate maritime and aviation adapters only after domain-specific threat models and scope reviews.
+- [ ] Keep every adapter synthetic and non-actuating.
+
+### Phase 5 — Evidence and inspection
 - [ ] Produce scenario reports and local inspection views.
 - [ ] Measure detection latency and false-positive/negative counts.
 - [ ] Evaluate durable evidence, signed checkpoints, and key lifecycle separately.
 
-### Phase 5 — Independent review
+### Phase 6 — Independent review
 - [ ] Conduct an independent architecture and threat-model review.
-- [ ] Review assumptions with qualified railway safety and cybersecurity specialists before domain-specific assurance claims.
+- [ ] Seek qualified domain review before making domain-specific assurance claims.
 - [ ] Keep operational integration out of this portfolio prototype.
 
 ## Safety and assurance statement
 
-Kernveil Resilience Lab is a local, synthetic-data research and portfolio prototype. It is not a safety instrumented system, certified railway product, safety case, or production security gateway. It cannot eliminate all communication or technology failures. Its purpose is to make selected failure modes observable, testable, explainable, and reproducible, and to demonstrate fail-safe handling within explicitly bounded simulations.
+Kernveil Resilience Lab is a local, synthetic-data research and portfolio prototype. It is not a safety instrumented system, certified transportation product, safety case, navigation service, or production security gateway. It cannot eliminate all communication or technology failures. Its purpose is to make selected failure modes observable, testable, explainable, and reproducible, and to demonstrate bounded handling of uncertainty within explicitly defined simulations.
