@@ -191,5 +191,7 @@ def test_policy_fingerprint_changes_when_effective_configuration_changes() -> No
 
 def test_policy_fingerprint_is_validated_as_sha256_hex() -> None:
     evidence = evaluate_access(make_request(), make_policy(), now=NOW)
+    values = evidence.model_dump()
+    values["policy_sha256"] = "not-a-digest"
     with pytest.raises(ValidationError):
-        evidence.model_copy(update={"policy_sha256": "not-a-digest"})
+        type(evidence)(**values)
