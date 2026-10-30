@@ -12,6 +12,7 @@ from .models import (
     AccessReasonCode,
     AccessRequest,
     DevicePosture,
+    SessionGrant,
 )
 
 
@@ -60,7 +61,8 @@ def evaluate_access(
         denied.append(AccessReasonCode.SESSION_REVOKED)
     if evaluated_at >= session.expires_at:
         denied.append(AccessReasonCode.SESSION_EXPIRED)
-    if request.action not in session.scopes:
+    requested_grant = SessionGrant(action=request.action, resource=request.resource)
+    if requested_grant not in session.grants:
         denied.append(AccessReasonCode.SESSION_SCOPE_INSUFFICIENT)
 
     if request.action in policy.privileged_actions:
