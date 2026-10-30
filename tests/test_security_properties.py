@@ -12,9 +12,11 @@ from sentinel_interlock.security.models import (
     AccessReasonCode,
     AccessRequest,
     DevicePosture,
+    SessionGrant,
 )
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
+RESOURCE = "vault://production/team-a"
 
 
 def make_policy() -> AccessPolicy:
@@ -47,7 +49,7 @@ def make_request() -> AccessRequest:
             "session_id": "session-1",
             "subject_id": "operator-1",
             "device_id": "workstation-1",
-            "scopes": frozenset({"secrets.read"}),
+            "grants": frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)}),
             "expires_at": NOW + timedelta(minutes=10),
         },
         action="secrets.read",
@@ -55,7 +57,7 @@ def make_request() -> AccessRequest:
         approval={
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
-            "resource": "vault://production/team-a",
+            "resource": RESOURCE,
             "approved_at": NOW - timedelta(seconds=10),
             "expires_at": NOW + timedelta(minutes=2),
         },
@@ -141,10 +143,10 @@ def test_session_device_mismatch_never_allows(device_id: str) -> None:
 
 
 @given(scope_present=st.booleans())
-def test_privileged_action_requires_session_scope(scope_present: bool) -> None:
+def test_privileged_action_requires_exact_session_grant(scope_present: bool) -> None:
     request = make_request()
-    scopes = frozenset({"secrets.read"}) if scope_present else frozenset()
-    session = request.session.model_copy(update={"scopes": scopes})
+    grants = frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)}) if scope_present else frozenset()
+    session = request.session.model_copy(update={"grants": grants})
     result = evaluate_access(
         request.model_copy(update={"session": session}), make_policy(), now=NOW
     )
@@ -153,6 +155,14 @@ def test_privileged_action_requires_session_scope(scope_present: bool) -> None:
     else:
         assert result.decision is AccessDecision.DENY
         assert AccessReasonCode.SESSION_SCOPE_INSUFFICIENT in result.reason_codes
+
+
+@given(resource=st.text(min_size=1, max_size=256).filter(lambda value: value != RESOURCE))
+def test_same_action_on_ungranted_resource_never_allows(resource: str) -> None:
+    request = make_request().model_copy(update={"resource": resource})
+    result = evaluate_access(request, make_policy(), now=NOW)
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_SCOPE_INSUFFICIENT in result.reason_codes
 
 
 @given(action=st.sampled_from(["secrets.read", "secrets.write", "users.delete"]))
