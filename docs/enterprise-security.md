@@ -10,17 +10,19 @@ The module is a **Policy Decision Point (PDP)**. It is not a Policy Enforcement 
 
 The `sentinel_interlock.security.models` module defines strict, immutable Pydantic contracts for identity, device, session, approval, access request, policy, and decision evidence. Extra fields are rejected and timestamps must be timezone-aware.
 
+Each session assertion is bound to both a subject identifier and a device identifier. The evaluator denies a request when either binding differs from the identity or device assertion in the same request. This prevents accidental cross-composition of otherwise valid synthetic assertions; it does not cryptographically establish that the bindings are authentic.
+
 `evaluate_access()` returns one of three outcomes:
 
 - **ALLOW:** every configured check passed for the supplied assertions.
-- **DENY:** at least one explicit policy violation was found, such as an unauthenticated identity, compromised device, revoked/expired session, insufficient scope, missing phishing-resistant authentication method, or invalid privileged approval.
+- **DENY:** at least one explicit policy violation was found, such as an unauthenticated identity, compromised device, revoked/expired or mismatched session, insufficient scope, missing phishing-resistant authentication method, or invalid privileged approval.
 - **INDETERMINATE:** no explicit denial was found, but the evidence is insufficient to authorize confidently, for example an untrusted assertion issuer, unknown device posture, or stale device observation.
 
 An explicit denial takes precedence over indeterminate findings. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
 
 ## Property-based verification
 
-`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session scopes, privileged action approval, and identity issuer. The properties assert that revoked sessions, non-healthy devices, stale evidence, missing scopes, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
+`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, session scopes, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing scopes, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
 
 These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
 
