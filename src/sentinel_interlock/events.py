@@ -150,9 +150,12 @@ def validate_event(
         computed_digest = None
         reasons.append(EventReasonCode.PAYLOAD_NOT_CANONICAL_JSON)
 
-    if computed_digest is not None and event.payload_sha256 is not None:
-        if computed_digest != event.payload_sha256:
-            reasons.append(EventReasonCode.PAYLOAD_DIGEST_MISMATCH)
+    if (
+        computed_digest is not None
+        and event.payload_sha256 is not None
+        and computed_digest != event.payload_sha256
+    ):
+        reasons.append(EventReasonCode.PAYLOAD_DIGEST_MISMATCH)
 
     unique_reasons = tuple(dict.fromkeys(reasons))
     rejected_reasons = {
