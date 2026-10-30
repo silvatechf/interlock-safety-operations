@@ -38,6 +38,8 @@ class AccessReasonCode(StrEnum):
     SESSION_REVOKED = "session_revoked"
     SESSION_EXPIRED = "session_expired"
     SESSION_SCOPE_INSUFFICIENT = "session_scope_insufficient"
+    SESSION_SUBJECT_MISMATCH = "session_subject_mismatch"
+    SESSION_DEVICE_MISMATCH = "session_device_mismatch"
     APPROVAL_REQUIRED = "approval_required"
     APPROVAL_INVALID = "approval_invalid"
     APPROVAL_EXPIRED = "approval_expired"
@@ -75,6 +77,8 @@ class DeviceAssertion(_StrictModel):
 
 class SessionAssertion(_StrictModel):
     session_id: str = Field(min_length=1, max_length=128)
+    subject_id: str = Field(min_length=1, max_length=128)
+    device_id: str = Field(min_length=1, max_length=128)
     scopes: frozenset[str] = frozenset()
     expires_at: datetime
     revoked: bool = False
