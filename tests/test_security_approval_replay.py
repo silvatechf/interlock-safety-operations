@@ -125,6 +125,18 @@ def test_tampered_approval_claim_fails_closed_without_consumption(tmp_path) -> N
     assert valid.decision is AccessDecision.ALLOW
 
 
+def test_tampered_approval_id_fails_signature_verification(tmp_path) -> None:
+    request = make_request()
+    assert request.approval is not None
+    altered = request.approval.model_copy(update={"approval_id": "attacker-chosen-id"})
+    result = consume(
+        request.model_copy(update={"approval": altered}),
+        SQLiteApprovalStore(tmp_path / "approvals.sqlite3"),
+    )
+    assert result.decision is AccessDecision.DENY
+    assert result.reason_codes == (AccessReasonCode.APPROVAL_SIGNATURE_INVALID,)
+
+
 def test_tampered_approver_subject_fails_signature_verification(tmp_path) -> None:
     request = make_request()
     assert request.approval is not None
