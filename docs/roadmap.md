@@ -57,7 +57,7 @@
 - [x] Implement deterministic ALLOW, DENY, and INDETERMINATE access decisions.
 - [x] Evaluate authentication-method assertions, device posture/source/freshness, session expiry/revocation/scope, and independent approval assertions.
 - [x] Add deterministic tests for compromised-endpoint and privileged-access cases.
-- [ ] Add property-based tests for access-policy invariants and malformed input boundaries.
+- [x] Add Hypothesis tests for revocation, device posture, freshness, session scope, approval matching, and trusted issuer invariants.
 - [ ] Add signed identity/device/approval assertion verification and explicit trust lifecycle.
 - [ ] Define policy version governance and safe rollback.
 
