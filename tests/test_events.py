@@ -172,3 +172,13 @@ def test_non_json_payload_is_rejected() -> None:
 
     assert result.status is EventValidationStatus.REJECTED
     assert EventReasonCode.PAYLOAD_NOT_CANONICAL_JSON in result.reason_codes
+
+
+
+def test_matching_payload_digest_passes() -> None:
+    payload = {"intersection": "junction-42", "status": "offline"}
+    event = make_event(payload=payload, payload_sha256=canonical_payload_sha256(payload))
+    result = validate_event(event, trusted_sources=TRUSTED, now=NOW)
+
+    assert result.status is EventValidationStatus.VALID
+    assert result.evidence["payload_digest_self_consistent"] is True
