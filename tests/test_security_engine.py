@@ -33,7 +33,7 @@ def make_request(**overrides: object) -> AccessRequest:
         },
         "device": {
             "device_id": "workstation-1", "source_id": "edr.example.test",
-            "posture": "healthy", "observed_at": NOW,
+            "posture": DevicePosture.HEALTHY, "observed_at": NOW,
         },
         "session": {
             "session_id": "session-1", "scopes": frozenset({"secrets.read"}),
@@ -57,7 +57,7 @@ def test_healthy_independently_approved_access_is_allowed() -> None:
 
 
 def test_compromised_device_is_denied() -> None:
-    device = make_request().device.model_copy(update={"posture": "compromised"})
+    device = make_request().device.model_copy(update={"posture": DevicePosture.COMPROMISED})
     result = evaluate_access(make_request(device=device), make_policy(), now=NOW)
     assert result.decision is AccessDecision.DENY
     assert AccessReasonCode.DEVICE_COMPROMISED in result.reason_codes
@@ -112,7 +112,7 @@ def test_same_identity_cannot_approve_own_privileged_action() -> None:
 
 
 def test_unknown_device_posture_is_indeterminate() -> None:
-    device = make_request().device.model_copy(update={"posture": "unknown"})
+    device = make_request().device.model_copy(update={"posture": DevicePosture.UNKNOWN})
     result = evaluate_access(make_request(device=device), make_policy(), now=NOW)
     assert result.decision is AccessDecision.INDETERMINATE
     assert AccessReasonCode.DEVICE_POSTURE_UNKNOWN in result.reason_codes
