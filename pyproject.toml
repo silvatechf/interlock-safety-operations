@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sentinel-interlock"
 version = "0.1.0"
-description = "Explainable policy enforcement for simulated safety-critical operations"
+description = "Local-first event validation and policy evaluation for synthetic resilience scenarios"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
