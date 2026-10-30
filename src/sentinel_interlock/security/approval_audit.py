@@ -118,39 +118,21 @@ def verify_audit_chain(records: Iterable[ApprovalAuditRecord]) -> bool:
         if record.previous_hash != previous_hash:
             return False
         try:
-            expected = create_audit_record(
-                _evidence_projection(record),
+            payload = _canonical_payload(
                 sequence=record.sequence,
+                decision_id=record.decision_id,
                 approval_id=record.approval_id,
                 key_id=record.key_id,
+                decision=record.decision,
+                reason_codes=record.reason_codes,
+                evaluated_at=record.evaluated_at,
+                policy_sha256=record.policy_sha256,
                 previous_hash=record.previous_hash,
             )
+            expected_hash = hashlib.sha256(payload).hexdigest()
         except (TypeError, ValueError, AttributeError):
             return False
-        if expected.record_hash != record.record_hash:
+        if expected_hash != record.record_hash:
             return False
         previous_hash = record.record_hash
     return True
-
-
-def _evidence_projection(record: ApprovalAuditRecord) -> AccessEvidence:
-    """Reconstruct only the fields committed by the audit record."""
-    from datetime import datetime
-    from uuid import UUID
-
-    from .models import AccessDecision, AccessReasonCode
-
-    return AccessEvidence(
-        decision_id=record.decision_id,
-        policy_id="audit-verification",
-        policy_version="audit-verification",
-        policy_sha256=record.policy_sha256,
-        decision=AccessDecision(record.decision),
-        reason_codes=tuple(AccessReasonCode(code) for code in record.reason_codes),
-        evaluated_at=datetime.fromisoformat(record.evaluated_at),
-        subject_id="audit-verification",
-        device_id="audit-verification",
-        session_id="audit-verification",
-        action="audit-verification",
-        resource="audit-verification",
-    )

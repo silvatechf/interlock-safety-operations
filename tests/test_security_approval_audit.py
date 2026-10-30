@@ -1,17 +1,19 @@
 """Transactional audit coverage for signed privileged approvals."""
 
+import sqlite3
 from dataclasses import replace
 
-from sentinel_interlock.security.approval_audit import verify_audit_chain
-from sentinel_interlock.security.models import AccessDecision, AccessReasonCode
+import pytest
 
-from test_security_approval_replay import (
-    NOW,
-    SQLiteApprovalStore,
-    VERIFIER,
-    consume,
-    make_request,
+from sentinel_interlock.security.approval_audit import verify_audit_chain
+from sentinel_interlock.security.approval_store import SQLiteApprovalStore
+from sentinel_interlock.security.models import (
+    AccessDecision,
+    AccessReasonCode,
+    DevicePosture,
 )
+
+from test_security_approval_replay import NOW, consume, make_request
 
 
 def test_allow_and_replay_deny_are_both_audited(tmp_path) -> None:
@@ -36,7 +38,7 @@ def test_allow_and_replay_deny_are_both_audited(tmp_path) -> None:
 def test_policy_denial_is_audited_without_consuming_approval(tmp_path) -> None:
     store = SQLiteApprovalStore(tmp_path / "audit.sqlite3")
     request = make_request()
-    compromised = request.device.model_copy(update={"posture": "compromised"})
+    compromised = request.device.model_copy(update={"posture": DevicePosture.COMPROMISED})
 
     result = consume(request.model_copy(update={"device": compromised}), store)
     next_result = consume(request, store)
@@ -101,3 +103,27 @@ def test_concurrent_replay_attempts_produce_one_allow_and_audit_every_result(tmp
     assert sum(item.decision is AccessDecision.DENY for item in results) == 15
     assert len(store.audit_records()) == 16
     assert store.verify_audit_chain()
+
+
+
+def test_audit_failure_rolls_back_approval_consumption(tmp_path) -> None:
+    database = tmp_path / "audit.sqlite3"
+    store = SQLiteApprovalStore(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TRIGGER reject_audit BEFORE INSERT ON approval_decision_audit
+            BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END
+            """
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="audit unavailable"):
+        consume(make_request(), store)
+
+    with sqlite3.connect(database) as connection:
+        connection.execute("DROP TRIGGER reject_audit")
+
+    retried = consume(make_request(), store)
+    assert retried.decision is AccessDecision.ALLOW
+    assert len(store.audit_records()) == 1
+    assert store.audit_records()[0].decision == "allow"
