@@ -34,11 +34,8 @@ def _policy_fingerprint(policy: AccessPolicy) -> str:
         "max_approval_age_seconds": policy.max_approval_age_seconds,
     }
     encoded = json.dumps(
-        canonical_policy,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-        allow_nan=False,
+        canonical_policy, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -65,9 +62,7 @@ def evaluate_access(
     identity_age = (evaluated_at - identity.authenticated_at).total_seconds()
     if identity_age < 0 or identity_age > policy.max_identity_age_seconds:
         indeterminate.append(AccessReasonCode.IDENTITY_ASSERTION_STALE)
-    if not policy.required_authentication_methods.issubset(
-        identity.authentication_methods
-    ):
+    if not policy.required_authentication_methods.issubset(identity.authentication_methods):
         denied.append(AccessReasonCode.AUTHENTICATION_METHOD_INSUFFICIENT)
 
     if device.source_id not in policy.trusted_device_sources:
@@ -105,10 +100,7 @@ def evaluate_access(
                 denied.append(AccessReasonCode.APPROVAL_NOT_YET_VALID)
             else:
                 approval_age = (evaluated_at - approval.approved_at).total_seconds()
-                if (
-                    approval_age > policy.max_approval_age_seconds
-                    or evaluated_at >= approval.expires_at
-                ):
+                if approval_age > policy.max_approval_age_seconds or evaluated_at >= approval.expires_at:
                     denied.append(AccessReasonCode.APPROVAL_EXPIRED)
 
     unique_denied = tuple(dict.fromkeys(denied))
@@ -155,7 +147,7 @@ def evaluate_and_consume_approval(
     ):
         return evidence
 
-    if not approval_verifier.verify(request.approval):
+    if not approval_verifier.verify(request.approval, evaluated_at=evidence.evaluated_at):
         return evidence.model_copy(
             update={
                 "decision": AccessDecision.DENY,
