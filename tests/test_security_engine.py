@@ -161,3 +161,35 @@ def test_contracts_reject_unknown_fields_and_naive_timestamps() -> None:
             authentication_methods=frozenset(),
             authenticated_at=datetime(2026, 10, 30, 12, 0), unexpected="field",
         )
+
+
+def test_policy_fingerprint_is_stable_across_set_ordering() -> None:
+    first = make_policy(
+        trusted_identity_issuers=frozenset({"issuer-b", "issuer-a"}),
+        trusted_device_sources=frozenset({"edr-b", "edr-a"}),
+    )
+    second = make_policy(
+        trusted_identity_issuers=frozenset({"issuer-a", "issuer-b"}),
+        trusted_device_sources=frozenset({"edr-a", "edr-b"}),
+    )
+
+    first_evidence = evaluate_access(make_request(), first, now=NOW)
+    second_evidence = evaluate_access(make_request(), second, now=NOW)
+
+    assert first_evidence.policy_sha256 == second_evidence.policy_sha256
+    assert len(first_evidence.policy_sha256) == 64
+
+
+def test_policy_fingerprint_changes_when_effective_configuration_changes() -> None:
+    baseline = evaluate_access(make_request(), make_policy(), now=NOW)
+    changed_policy = make_policy(max_device_posture_age_seconds=60)
+    changed = evaluate_access(make_request(), changed_policy, now=NOW)
+
+    assert baseline.policy_version == changed.policy_version
+    assert baseline.policy_sha256 != changed.policy_sha256
+
+
+def test_policy_fingerprint_is_validated_as_sha256_hex() -> None:
+    evidence = evaluate_access(make_request(), make_policy(), now=NOW)
+    with pytest.raises(ValidationError):
+        evidence.model_copy(update={"policy_sha256": "not-a-digest"})
