@@ -4,7 +4,13 @@ This package evaluates caller-supplied security assertions. It does not
 authenticate identities, inspect endpoints, revoke real sessions, or enforce access.
 """
 
-from .approval_audit import ApprovalAuditRecord, verify_audit_chain
+from .approval_audit import (
+    ApprovalAuditCheckpoint,
+    ApprovalAuditRecord,
+    create_audit_checkpoint,
+    verify_audit_chain,
+    verify_audit_checkpoint,
+)
 from .approval_signatures import (
     ApprovalVerificationKey,
     Ed25519ApprovalVerifier,
@@ -26,8 +32,10 @@ from .models import (
 
 __all__ = [
     "AccessDecision", "AccessEvidence", "AccessPolicy", "AccessRequest",
-    "ApprovalAssertion", "ApprovalAuditRecord", "ApprovalVerificationKey",
-    "Ed25519ApprovalVerifier", "approval_signing_payload", "DeviceAssertion",
-    "DevicePosture", "IdentityAssertion", "SQLiteApprovalStore", "SessionAssertion",
-    "evaluate_access", "evaluate_and_consume_approval", "verify_audit_chain",
+    "ApprovalAssertion", "ApprovalAuditCheckpoint", "ApprovalAuditRecord",
+    "ApprovalVerificationKey", "Ed25519ApprovalVerifier",
+    "approval_signing_payload", "DeviceAssertion", "DevicePosture",
+    "IdentityAssertion", "SQLiteApprovalStore", "SessionAssertion",
+    "create_audit_checkpoint", "evaluate_access", "evaluate_and_consume_approval",
+    "verify_audit_chain", "verify_audit_checkpoint",
 ]
