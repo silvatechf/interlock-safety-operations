@@ -106,7 +106,12 @@ def evaluate_road_scenario(scenario: RoadScenario) -> RoadScenarioResult:
                 claims_by_subject.setdefault(subject, set()).add(state)
             if event.event_type == "road.traffic_signal.status":
                 if event.payload.get("state") == "offline":
-                    findings.append(RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED)
+                    findings.extend(
+                        (
+                            RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED,
+                            RoadFindingCode.HUMAN_REVIEW_REQUIRED,
+                        )
+                    )
         elif result.status is EventValidationStatus.REJECTED:
             findings.append(RoadFindingCode.EVENT_REJECTED)
         else:
@@ -132,7 +137,11 @@ def evaluate_road_scenario(scenario: RoadScenario) -> RoadScenarioResult:
     )
     accepted = len(outcomes) - rejected - indeterminate
 
-    if conflicts or rejected:
+    if (
+        conflicts
+        or rejected
+        or RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED in findings
+    ):
         review_status = RoadReviewStatus.REVIEW_REQUIRED
     elif indeterminate:
         review_status = RoadReviewStatus.INDETERMINATE
