@@ -75,11 +75,18 @@ class DeviceAssertion(_StrictModel):
         return _require_aware(value)
 
 
+class SessionGrant(_StrictModel):
+    """Exact action/resource permission carried by a synthetic session."""
+
+    action: str = Field(min_length=1, max_length=128)
+    resource: str = Field(min_length=1, max_length=256)
+
+
 class SessionAssertion(_StrictModel):
     session_id: str = Field(min_length=1, max_length=128)
     subject_id: str = Field(min_length=1, max_length=128)
     device_id: str = Field(min_length=1, max_length=128)
-    scopes: frozenset[str] = frozenset()
+    grants: frozenset[SessionGrant] = frozenset()
     expires_at: datetime
     revoked: bool = False
 
