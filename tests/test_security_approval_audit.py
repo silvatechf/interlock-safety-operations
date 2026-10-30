@@ -1,20 +1,108 @@
 """Transactional audit coverage for signed privileged approvals."""
 
+import base64
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from sentinel_interlock.security.approval_audit import verify_audit_chain
+from sentinel_interlock.security.approval_signatures import (
+    ApprovalVerificationKey,
+    Ed25519ApprovalVerifier,
+    approval_signing_payload,
+)
 from sentinel_interlock.security.approval_store import SQLiteApprovalStore
+from sentinel_interlock.security.engine import evaluate_and_consume_approval
 from sentinel_interlock.security.models import (
     AccessDecision,
+    AccessPolicy,
     AccessReasonCode,
+    AccessRequest,
     DevicePosture,
+    SessionGrant,
 )
 
-from test_security_approval_replay import NOW, consume, make_request
+NOW = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
+RESOURCE = "vault://production/team-a"
+APPROVAL_ID = "approval-unique-001"
+KEY_ID = "approval-key-2026-01"
+APPROVER = "approver-2"
+PRIVATE_KEY = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+PUBLIC_KEY = PRIVATE_KEY.public_key().public_bytes(
+    encoding=serialization.Encoding.Raw,
+    format=serialization.PublicFormat.Raw,
+)
+VERIFIER = Ed25519ApprovalVerifier({
+    KEY_ID: ApprovalVerificationKey(approver_subject_id=APPROVER, public_key=PUBLIC_KEY)
+})
+
+
+def make_policy() -> AccessPolicy:
+    return AccessPolicy(
+        policy_id="audit-policy",
+        version="1",
+        trusted_identity_issuers=frozenset({"https://id.example.test"}),
+        trusted_device_sources=frozenset({"edr.example.test"}),
+        required_authentication_methods=frozenset({"webauthn"}),
+        privileged_actions=frozenset({"secrets.read"}),
+    )
+
+
+def make_request() -> AccessRequest:
+    request = AccessRequest(
+        identity={
+            "subject_id": "operator-1",
+            "issuer": "https://id.example.test",
+            "authenticated": True,
+            "authentication_methods": frozenset({"webauthn"}),
+            "authenticated_at": NOW,
+        },
+        device={
+            "device_id": "workstation-1",
+            "source_id": "edr.example.test",
+            "posture": DevicePosture.HEALTHY,
+            "observed_at": NOW,
+        },
+        session={
+            "session_id": "session-1",
+            "subject_id": "operator-1",
+            "device_id": "workstation-1",
+            "grants": frozenset({
+                SessionGrant(action="secrets.read", resource=RESOURCE)
+            }),
+            "expires_at": NOW + timedelta(minutes=10),
+        },
+        action="secrets.read",
+        resource=RESOURCE,
+        approval={
+            "approval_id": APPROVAL_ID,
+            "key_id": KEY_ID,
+            "approver_subject_id": APPROVER,
+            "action": "secrets.read",
+            "resource": RESOURCE,
+            "approved_at": NOW - timedelta(seconds=10),
+            "expires_at": NOW + timedelta(minutes=2),
+        },
+    )
+    assert request.approval is not None
+    signature = base64.urlsafe_b64encode(
+        PRIVATE_KEY.sign(approval_signing_payload(request.approval))
+    ).rstrip(b"=").decode("ascii")
+    return request.model_copy(update={
+        "approval": request.approval.model_copy(update={"signature": signature})
+    })
+
+
+def consume(request: AccessRequest, store: SQLiteApprovalStore):
+    return evaluate_and_consume_approval(
+        request, make_policy(), store, approval_verifier=VERIFIER, now=NOW
+    )
+
 
 
 def test_allow_and_replay_deny_are_both_audited(tmp_path) -> None:
