@@ -4,7 +4,7 @@
 
 Kernveil is an experimental Python reference platform for evaluating the trustworthiness of synthetic operational events, detecting selected inconsistencies and communication failures, and producing explainable evidence. Its core is domain-agnostic; transportation is the first application family, with road-disruption simulation as the first new demonstrator. Railway, aviation, and maritime adapters are potential follow-on domains.
 
-The current portfolio MVP combines a generic policy-evaluation core with synthetic railway-inspired and IT operations examples. The event-validation and multi-domain Resilience Lab capabilities are planned work, not implemented features.
+The current portfolio MVP combines a generic policy-evaluation core, a deterministic synthetic event validator, and an offline road-disruption scenario simulator. All scenarios use synthetic fixtures and produce review classifications only.
 
 > **Safety boundary:** This is a research and portfolio prototype, not a navigation service, traffic-management platform, railway interlocking, train protection system, aviation or maritime control system, industrial safety controller, or certified safety component. Never connect it to live infrastructure, vehicles, signalling, braking, dispatch, traffic-light controllers, PLC/SCADA, or production systems. It does not issue right-of-way or movement instructions. A demo decision is not a real-world safety guarantee. No technology can promise zero risk or eliminate every failure.
 
@@ -95,9 +95,9 @@ The initial `sentinel_interlock.events` module now validates a versioned synthet
 
 ## Kernveil Resilience Lab — planned
 
-The next stage will add correlation rules, reproducible fault injection, and a road-disruption simulator for failed traffic lights and contradictory or stale incident reports. All inputs will be synthetic and offline.
+The initial road-disruption simulator is implemented in `sentinel_interlock.road_simulator`. It runs six deterministic scenarios: healthy report, traffic-signal outage, stale report, duplicate delivery, unknown source, and contradictory reports. It classifies the information for review and never issues right-of-way, route, or driver instructions. Controlled fault injection, richer correlation, and evidence reports remain planned.
 
-See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadmap.md). These capabilities are planned, not implemented in the current MVP.
+See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadmap.md). Fault injection, richer correlation, and evidence reporting remain planned.
 
 ## Status
 
