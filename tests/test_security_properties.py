@@ -145,7 +145,11 @@ def test_session_device_mismatch_never_allows(device_id: str) -> None:
 @given(scope_present=st.booleans())
 def test_privileged_action_requires_exact_session_grant(scope_present: bool) -> None:
     request = make_request()
-    grants = frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)}) if scope_present else frozenset()
+    grants = (
+        frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)})
+        if scope_present
+        else frozenset()
+    )
     session = request.session.model_copy(update={"grants": grants})
     result = evaluate_access(
         request.model_copy(update={"session": session}), make_policy(), now=NOW
