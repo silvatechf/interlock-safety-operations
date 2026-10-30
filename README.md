@@ -1,35 +1,35 @@
 # Kernveil
 
-**A local-first policy-evaluation and operational-resilience research prototype.**
+**A local-first operational event validation and resilience research prototype.**
 
-Kernveil is an experimental, local-first reference platform for evaluating whether synthetic operational requests satisfy explicit policy, authorization, state, freshness, and evidence constraints. Its proposed next stage, **Kernveil Resilience Lab**, extends this foundation toward communication-trust validation and reproducible fault-injection testing.
+Kernveil is an experimental Python reference platform for evaluating the trustworthiness of synthetic operational events, detecting selected inconsistencies and communication failures, and producing explainable evidence. Its core is domain-agnostic; transportation is the first application family, with road-disruption simulation as the first new demonstrator. Railway, aviation, and maritime adapters are potential follow-on domains.
 
-The portfolio MVP combines a generic policy-evaluation core with domain-specific simulation adapters. Examples cover a railway-inspired scenario and generic IT operations, using synthetic inputs only.
+The current portfolio MVP combines a generic policy-evaluation core with synthetic railway-inspired and IT operations examples. The event-validation and multi-domain Resilience Lab capabilities are planned work, not implemented features.
 
-> **Safety boundary:** This is a research and portfolio prototype, not a railway interlocking, train protection system, industrial safety controller, operational security gateway, or certified safety component. Never connect it to operational signalling, braking, dispatch, PLC/SCADA, production systems, or other safety-critical infrastructure. A demo decision is not a real-world safety guarantee. No technology can promise zero risk or eliminate every failure.
+> **Safety boundary:** This is a research and portfolio prototype, not a navigation service, traffic-management platform, railway interlocking, train protection system, aviation or maritime control system, industrial safety controller, or certified safety component. Never connect it to live infrastructure, vehicles, signalling, braking, dispatch, traffic-light controllers, PLC/SCADA, or production systems. It does not issue right-of-way or movement instructions. A demo decision is not a real-world safety guarantee. No technology can promise zero risk or eliminate every failure.
 
-## Goals
-- Explainable, deterministic allow-or-deny decisions.
-- Fail closed when required data is missing, stale, inconsistent, or unauthorized.
-- Keep generic policy logic separate from domain-specific constraints.
-- Provide structured decision evidence.
-- Test failure modes and invariants, not only happy paths.
-- Remain local-first and easy to run.
-- Evolve toward synthetic communication-integrity and resilience testing.
+## Product principles
 
-## Non-goals
-- Replacing certified safety systems or human operational procedures.
-- Calculating real braking curves, railway separation distances, route locking, or track occupancy.
-- Claiming compliance, certification, zero risk, or complete attack prevention.
-- Connecting to live telemetry or operational control paths.
-- Executing commands or actuating external systems.
+- Treat source, freshness, integrity, sequence, and context as explicit validation questions.
+- Distinguish invalid, stale, duplicated, contradictory, unknown, and indeterminate information.
+- Fail closed where configured policy requires trustworthy evidence.
+- Explain outcomes with stable reason codes and structured evidence.
+- Keep the generic core separate from domain-specific semantics and assumptions.
+- Simulate failures reproducibly; do not execute commands or actuate external systems.
 
-## Architecture
+## Domain strategy
+
+The core is reusable; domain adapters are not interchangeable. The first new demonstrator is road disruption: synthetic traffic-light outages, collision and hazard reports, road closures, stale or duplicated crowd reports, and conflicting information. Railway scenarios remain part of the existing project. Maritime and aviation scenarios may follow only with separate threat models, explicit assumptions, and qualified domain review.
+
+Kernveil is not another Waze or Google Maps. It does not provide live navigation or replace official alerts. It explores an independent validation layer that can assess whether synthetic event information is sufficiently current, consistent, and trustworthy for an advisory workflow.
+
+## Current architecture
+
 ```mermaid
 flowchart TD
     A["Synthetic request and facts"] --> B["Domain simulation adapter"]
     B --> C["Policy evaluation core"]
-    C --> D{"All configured checks pass?"}
+    C --> D{"Configured checks pass?"}
     D -->|Yes| E["ALLOW + structured evidence"]
     D -->|No| F["DENY + reason codes and evidence"]
     E --> G["Caller inspects result"]
@@ -37,11 +37,10 @@ flowchart TD
     G -. "No execution or actuation interface" .-> H["No external action"]
 ```
 
-The generic core checks actor and command allow-lists, required facts, context freshness, and explicit equality conditions. The actor identifier is not authenticated identity, and input facts are not trusted sensor data. The core produces a decision and evidence only; it does not execute the requested command.
-
-The generic core must not define railway distances, braking limits, occupancy interpretations, or industrial thresholds. Domain constraints belong in explicitly scoped simulation adapters.
+The implemented generic core checks actor and command allow-list assertions, required facts, context freshness, and explicit equality conditions. Actor identifiers are not authenticated identities, and input facts are not trusted sensor data. The core produces a decision and evidence only; it does not execute the requested command.
 
 ## Quick start
+
 Requirements: Git and Python 3.12.
 
 ```shell
@@ -50,6 +49,7 @@ cd interlock-safety-operations
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -61,6 +61,7 @@ mypy src
 ```
 
 **macOS / Linux:**
+
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -71,18 +72,14 @@ ruff check .
 mypy src
 ```
 
-## Demo output
-Run the demo to see three synthetic policy evaluations:
+## Existing demo
 
-| Scenario | Expected decision | Demonstration |
-|---|---|---|
-| Railway-inspired movement request; all example preconditions true | ALLOW | Configured actor, freshness, and required facts satisfy the example policy |
-| Railway-inspired request; section reported occupied | DENY | A failed precondition prevents an allow decision |
-| IT service restart; context is 31 seconds old | DENY | Stale context is rejected when the example policy allows at most 30 seconds |
+The current demo covers three synthetic policy evaluations: a railway-inspired request that satisfies configured preconditions, a railway-inspired request denied because a section is reported occupied, and an IT restart request denied because its context is stale.
 
 The facts are caller-supplied synthetic assertions, not trusted sensor or identity-provider data. No command is executed and no external system is contacted. ALLOW illustrates policy evaluation only, not a real-world safety determination.
 
 ## Engineering practices demonstrated
+
 - **Typed Python design:** validated models in [models.py](src/sentinel_interlock/models.py).
 - **Defensive policy evaluation:** allow-lists, freshness checks, required facts, and explainable deny reasons in [engine.py](src/sentinel_interlock/engine.py).
 - **Automated verification:** [Hypothesis property tests](tests/test_properties.py), [evidence serialization tests](tests/test_serialization.py), and [session/replay tests](tests/test_session.py).
@@ -92,15 +89,18 @@ The facts are caller-supplied synthetic assertions, not trusted sensor or identi
 
 These practices describe what is present in the repository; they do not mean all risks are eliminated or that the system is independently verified.
 
-## Kernveil Resilience Lab — planned direction
-The next prototype stage will explore synthetic communication validation and operational-resilience testing: message freshness, sequence and replay detection, integrity checks, contradictory states, clock uncertainty, service outages, and reproducible fault injection. The aim is to measure how the prototype handles explicitly defined failures—not to promise zero risk.
+## Kernveil Resilience Lab — planned
+
+The next stage will define a versioned event envelope, deterministic trust/freshness/sequence/replay checks, correlation rules, and reproducible fault injection. The first new domain demonstrator will model road disruptions, including failed traffic lights and contradictory or stale incident reports. All inputs will be synthetic and offline.
 
 See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadmap.md). These capabilities are planned, not implemented in the current MVP.
 
 ## Status
-Portfolio-stage reference implementation. Current tests demonstrate only the software properties they cover, not operational safety or suitability.
 
-## Docs
+Portfolio-stage reference implementation. Tests demonstrate only the software properties they cover, not operational safety or suitability.
+
+## Documentation
+
 - [Architecture](docs/architecture.md)
 - [Threat model](docs/threat-model.md)
 - [Safety boundary and hazards](docs/safety-boundary.md)
@@ -113,4 +113,5 @@ Portfolio-stage reference implementation. Current tests demonstrate only the sof
 - [Documentación en español](docs/es/README.md)
 
 ## License
+
 MIT — see [LICENSE](LICENSE).
