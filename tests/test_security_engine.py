@@ -51,6 +51,7 @@ def make_request(**overrides: object) -> AccessRequest:
         },
         "action": "secrets.read", "resource": RESOURCE,
         "approval": {
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2", "action": "secrets.read",
             "resource": RESOURCE, "approved_at": NOW - timedelta(seconds=10),
             "expires_at": NOW + timedelta(minutes=2),
