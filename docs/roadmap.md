@@ -21,18 +21,18 @@
 
 ## Milestone 3 — Engineering assurance
 - [x] Expand state-transition models and invariants.
-- [ ] Add fault injection and broader fuzz/property tests.
+- [ ] Add broader fault injection and fuzz/property tests.
 - [x] Add secret scanning and review CI action pinning.
 - [x] Trace risks to tests and architecture decisions.
 - [x] Repository-level review of public claims and scope (self-review; not an external independent assessment).
 
-## Milestone 4 — Kernveil Resilience Lab (planned)
-- [ ] Define a versioned synthetic event envelope and trust assumptions.
-- [ ] Specify source claims, integrity, freshness, sequence, correlation, and clock uncertainty.
-- [ ] Implement deterministic event validation with stable reason codes.
-- [ ] Add reproducible fault injection for loss, delay, duplication, reordering, corruption, outage, and clock skew.
-- [ ] Connect validated synthetic context to the existing policy engine without adding actuation.
-- [ ] Generate local scenario reports with detection metrics and explicit limitations.
+## Milestone 4 — Event validation foundation
+- [x] Define a versioned synthetic event envelope.
+- [x] Implement source allow-list, payload digest consistency, freshness, expiry, duplicate ID, and sequence checks.
+- [x] Return VALID, REJECTED, and INDETERMINATE outcomes with stable reason codes.
+- [x] Add deterministic tests for expected validation outcomes.
+- [ ] Add property-based and fuzz testing for event envelopes and payload boundaries.
+- [ ] Define durable source identity, trust lifecycle, and replay-state persistence.
 
 ## Milestone 5 — Road-disruption simulator (first new domain)
 - [ ] Model synthetic traffic-light outage, collision, road closure, debris/hazard, and contradictory reports.
