@@ -191,6 +191,8 @@ def verify_audit_checkpoint(records: object, checkpoint: object) -> bool:
     if not snapshot or not verify_audit_chain(snapshot):
         return False
     latest = snapshot[-1]
+    if not isinstance(latest, ApprovalAuditRecord):
+        return False
     return (
         latest.sequence == checkpoint.sequence
         and latest.record_hash == checkpoint.record_hash
