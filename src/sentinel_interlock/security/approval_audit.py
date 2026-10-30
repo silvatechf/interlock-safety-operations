@@ -102,12 +102,11 @@ def create_audit_record(
     )
 
 
-def verify_audit_chain(records: Iterable[ApprovalAuditRecord]) -> bool:
+def verify_audit_chain(records: object) -> bool:
     """Verify sequence, linkage, and record hashes; malformed input fails closed."""
-    try:
-        iterator = iter(records)
-    except TypeError:
+    if not isinstance(records, Iterable):
         return False
+    iterator = iter(records)
 
     previous_hash = AUDIT_GENESIS_HASH
     for expected_sequence, record in enumerate(iterator):
