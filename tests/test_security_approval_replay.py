@@ -265,7 +265,8 @@ def test_rotation_allows_old_and_new_keys_during_overlap(tmp_path) -> None:
 def test_invalid_key_configuration_is_rejected() -> None:
     with pytest.raises(ValueError):
         ApprovalVerificationKey(
-            APPROVER, PUBLIC_KEY, valid_until=NOW - timedelta(seconds=1)
+            APPROVER, PUBLIC_KEY,
+            valid_from=NOW, valid_until=NOW - timedelta(seconds=1),
         )
     with pytest.raises(ValueError):
         ApprovalVerificationKey(APPROVER, PUBLIC_KEY, valid_from=NOW, valid_until=NOW)
