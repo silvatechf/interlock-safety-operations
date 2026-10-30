@@ -1,6 +1,7 @@
 """Transactional audit coverage for signed privileged approvals."""
 
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
 import pytest
@@ -93,8 +94,6 @@ def test_audit_record_minimizes_identity_and_resource_data(tmp_path) -> None:
 
 
 def test_concurrent_replay_attempts_produce_one_allow_and_audit_every_result(tmp_path) -> None:
-    from concurrent.futures import ThreadPoolExecutor
-
     store = SQLiteApprovalStore(tmp_path / "audit.sqlite3")
     with ThreadPoolExecutor(max_workers=8) as executor:
         results = list(executor.map(lambda _: consume(make_request(), store), range(16)))
@@ -103,7 +102,6 @@ def test_concurrent_replay_attempts_produce_one_allow_and_audit_every_result(tmp
     assert sum(item.decision is AccessDecision.DENY for item in results) == 15
     assert len(store.audit_records()) == 16
     assert store.verify_audit_chain()
-
 
 
 def test_audit_failure_rolls_back_approval_consumption(tmp_path) -> None:
