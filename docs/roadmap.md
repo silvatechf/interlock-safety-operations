@@ -52,6 +52,23 @@
 - [ ] Request independent architecture and threat-model review.
 - [ ] Seek qualified domain review before making domain-specific assurance claims.
 
+## Milestone 6 — Enterprise access decision foundation
+- [x] Define strict Pydantic contracts for identity, device posture, session, approval, access request, policy, and evidence.
+- [x] Implement deterministic ALLOW, DENY, and INDETERMINATE access decisions.
+- [x] Evaluate authentication-method assertions, device posture/source/freshness, session expiry/revocation/scope, and independent approval assertions.
+- [x] Add deterministic tests for compromised-endpoint and privileged-access cases.
+- [ ] Add property-based tests for access-policy invariants and malformed input boundaries.
+- [ ] Add signed identity/device/approval assertion verification and explicit trust lifecycle.
+- [ ] Define policy version governance and safe rollback.
+
+## Milestone 7 — Enforcement and integrations
+- [ ] Design a minimal PEP integration boundary and deny-by-default behavior.
+- [ ] Evaluate OIDC/JWT verification, key rotation, and real identity-provider integration.
+- [ ] Evaluate signed device posture from an EDR/MDM provider.
+- [ ] Evaluate server-side revocation state and durable storage.
+- [ ] Add integration tests using isolated local test services.
+- [ ] Do not claim real protection until an end-to-end enforcement path is independently tested.
+
 ## Deferred by design
 - Broader fault injection and fuzz/property tests remain planned work; they are not represented as completed assurance.
 - External independent assessment has not been performed. The completed scope review is a repository-level self-review only.
