@@ -11,7 +11,7 @@ import binascii
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol
 
 from cryptography.exceptions import InvalidSignature
