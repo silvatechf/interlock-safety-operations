@@ -99,13 +99,15 @@ def evaluate_access(
                 denied.append(AccessReasonCode.APPROVER_NOT_INDEPENDENT)
             if approval.action != request.action or approval.resource != request.resource:
                 denied.append(AccessReasonCode.APPROVAL_INVALID)
-            approval_age = (evaluated_at - approval.approved_at).total_seconds()
-            if (
-                approval_age < 0
-                or approval_age > policy.max_approval_age_seconds
-                or evaluated_at >= approval.expires_at
-            ):
-                denied.append(AccessReasonCode.APPROVAL_EXPIRED)
+            if approval.approved_at > evaluated_at:
+                denied.append(AccessReasonCode.APPROVAL_NOT_YET_VALID)
+            else:
+                approval_age = (evaluated_at - approval.approved_at).total_seconds()
+                if (
+                    approval_age > policy.max_approval_age_seconds
+                    or evaluated_at >= approval.expires_at
+                ):
+                    denied.append(AccessReasonCode.APPROVAL_EXPIRED)
 
     unique_denied = tuple(dict.fromkeys(denied))
     unique_indeterminate = tuple(dict.fromkeys(indeterminate))
