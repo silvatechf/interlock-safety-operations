@@ -101,7 +101,7 @@ See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadm
 
 ## Enterprise access decision prototype
 
-The initial `sentinel_interlock.security` module evaluates synthetic identity, device-posture, session-scope, and privileged-approval assertions. It returns ALLOW, DENY, or INDETERMINATE with stable reason codes. The motivating scenario is a compromised workforce endpoint attempting to access a privileged resource.
+The `sentinel_interlock.security` module evaluates synthetic identity, device-posture, session, and privileged-approval assertions. Session grants bind an exact action/resource pair: permission to read one vault resource does not imply permission to read another. It returns ALLOW, DENY, or INDETERMINATE with stable reason codes. The motivating scenario is a compromised workforce endpoint attempting to access a privileged resource.
 
 This module is a Policy Decision Point (PDP), not a Policy Enforcement Point (PEP). It does not authenticate identities, inspect endpoints, revoke real sessions, issue credentials, or block API operations. All signals are caller-supplied assertions; source names and authentication-method labels are not cryptographic proof. See [enterprise security scope](docs/enterprise-security.md).
 
