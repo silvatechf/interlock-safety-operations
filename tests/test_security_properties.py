@@ -45,6 +45,8 @@ def make_request() -> AccessRequest:
         },
         session={
             "session_id": "session-1",
+            "subject_id": "operator-1",
+            "device_id": "workstation-1",
             "scopes": frozenset({"secrets.read"}),
             "expires_at": NOW + timedelta(minutes=10),
         },
@@ -114,6 +116,28 @@ def test_stale_identity_evidence_never_allows(age: int) -> None:
     )
     assert result.decision is AccessDecision.INDETERMINATE
     assert AccessReasonCode.IDENTITY_ASSERTION_STALE in result.reason_codes
+
+
+@given(subject_id=st.text(min_size=1, max_size=128).filter(lambda value: value != "operator-1"))
+def test_session_subject_mismatch_never_allows(subject_id: str) -> None:
+    request = make_request()
+    session = request.session.model_copy(update={"subject_id": subject_id})
+    result = evaluate_access(
+        request.model_copy(update={"session": session}), make_policy(), now=NOW
+    )
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_SUBJECT_MISMATCH in result.reason_codes
+
+
+@given(device_id=st.text(min_size=1, max_size=128).filter(lambda value: value != "workstation-1"))
+def test_session_device_mismatch_never_allows(device_id: str) -> None:
+    request = make_request()
+    session = request.session.model_copy(update={"device_id": device_id})
+    result = evaluate_access(
+        request.model_copy(update={"session": session}), make_policy(), now=NOW
+    )
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_DEVICE_MISMATCH in result.reason_codes
 
 
 @given(scope_present=st.booleans())
