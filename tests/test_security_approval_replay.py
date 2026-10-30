@@ -286,7 +286,8 @@ def test_policy_denial_does_not_consume_valid_approval(tmp_path) -> None:
 def test_stateless_evaluator_remains_separate_from_signature_verification(tmp_path) -> None:
     request = make_request()
     assert evaluate_access(request, make_policy(), now=NOW).decision is AccessDecision.ALLOW
-    assert consume(request, SQLiteApprovalStore(tmp_path / "approvals.sqlite3")).decision is AccessDecision.ALLOW
+    result = consume(request, SQLiteApprovalStore(tmp_path / "approvals.sqlite3"))
+    assert result.decision is AccessDecision.ALLOW
 
 
 def test_concurrent_consumers_have_exactly_one_winner(tmp_path) -> None:

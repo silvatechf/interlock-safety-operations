@@ -100,7 +100,10 @@ def evaluate_access(
                 denied.append(AccessReasonCode.APPROVAL_NOT_YET_VALID)
             else:
                 approval_age = (evaluated_at - approval.approved_at).total_seconds()
-                if approval_age > policy.max_approval_age_seconds or evaluated_at >= approval.expires_at:
+                if (
+                    approval_age > policy.max_approval_age_seconds
+                    or evaluated_at >= approval.expires_at
+                ):
                     denied.append(AccessReasonCode.APPROVAL_EXPIRED)
 
     unique_denied = tuple(dict.fromkeys(denied))
