@@ -7,8 +7,8 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from .approval_store import ApprovalStore
 from .approval_signatures import ApprovalVerifier
+from .approval_store import ApprovalStore
 from .models import (
     AccessDecision,
     AccessEvidence,

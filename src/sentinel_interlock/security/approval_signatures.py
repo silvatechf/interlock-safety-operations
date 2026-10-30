@@ -9,9 +9,10 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC
-from typing import Mapping, Protocol
+from typing import Protocol
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
