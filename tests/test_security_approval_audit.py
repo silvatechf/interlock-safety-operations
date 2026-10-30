@@ -10,7 +10,11 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from sentinel_interlock.security.approval_audit import verify_audit_chain
+from sentinel_interlock.security.approval_audit import (
+    create_audit_checkpoint,
+    verify_audit_chain,
+    verify_audit_checkpoint,
+)
 from sentinel_interlock.security.approval_signatures import (
     ApprovalVerificationKey,
     Ed25519ApprovalVerifier,
@@ -213,3 +217,30 @@ def test_audit_failure_rolls_back_approval_consumption(tmp_path) -> None:
     assert retried.decision is AccessDecision.ALLOW
     assert len(store.audit_records()) == 1
     assert store.audit_records()[0].decision == "allow"
+
+
+
+def test_external_checkpoint_detects_suffix_truncation_and_stale_snapshots(tmp_path) -> None:
+    store = SQLiteApprovalStore(tmp_path / "audit.sqlite3")
+    for _ in range(3):
+        consume(make_request(), store)
+    records = store.audit_records()
+    checkpoint = create_audit_checkpoint(records)
+
+    assert verify_audit_checkpoint(records, checkpoint)
+    assert not verify_audit_checkpoint(records[:-1], checkpoint)
+    assert not verify_audit_checkpoint(records[:-2], checkpoint)
+    assert not verify_audit_checkpoint(records[:1], checkpoint)
+    assert not verify_audit_checkpoint(records, replace(checkpoint, record_hash="0" * 64))
+
+
+def test_checkpoint_creation_rejects_empty_or_invalid_chains(tmp_path) -> None:
+    store = SQLiteApprovalStore(tmp_path / "audit.sqlite3")
+    with pytest.raises(ValueError, match="empty or invalid"):
+        create_audit_checkpoint(())
+
+    consume(make_request(), store)
+    records = store.audit_records()
+    tampered = (replace(records[0], decision="deny"),)
+    with pytest.raises(ValueError, match="empty or invalid"):
+        create_audit_checkpoint(tampered)

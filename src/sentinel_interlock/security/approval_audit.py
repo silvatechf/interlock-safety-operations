@@ -135,3 +135,63 @@ def verify_audit_chain(records: object) -> bool:
             return False
         previous_hash = record.record_hash
     return True
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalAuditCheckpoint:
+    """Portable checkpoint for one exact audit-chain snapshot."""
+
+    schema_version: int
+    sequence: int
+    record_hash: str
+
+
+def create_audit_checkpoint(
+    records: Iterable[ApprovalAuditRecord],
+) -> ApprovalAuditCheckpoint:
+    """Create a checkpoint for a verified, non-empty audit-chain snapshot.
+
+    Callers must retain the returned value independently from the audit database.
+    """
+    snapshot = tuple(records)
+    if not snapshot or not verify_audit_chain(snapshot):
+        raise ValueError("cannot checkpoint an empty or invalid audit chain")
+    latest = snapshot[-1]
+    return ApprovalAuditCheckpoint(
+        schema_version=AUDIT_CHAIN_SCHEMA_VERSION,
+        sequence=latest.sequence,
+        record_hash=latest.record_hash,
+    )
+
+
+def verify_audit_checkpoint(records: object, checkpoint: object) -> bool:
+    """Verify a chain against an independently retained exact-snapshot checkpoint.
+
+    A checkpoint is valid only when the supplied chain is valid and its latest
+    record exactly matches the checkpoint. Appending records requires a newer
+    independently retained checkpoint.
+    """
+    if not isinstance(checkpoint, ApprovalAuditCheckpoint):
+        return False
+    if type(checkpoint.schema_version) is not int:
+        return False
+    if checkpoint.schema_version != AUDIT_CHAIN_SCHEMA_VERSION:
+        return False
+    if type(checkpoint.sequence) is not int or checkpoint.sequence < 0:
+        return False
+    if (
+        not isinstance(checkpoint.record_hash, str)
+        or len(checkpoint.record_hash) != 64
+        or any(character not in "0123456789abcdef" for character in checkpoint.record_hash)
+    ):
+        return False
+    if not isinstance(records, Iterable):
+        return False
+    snapshot = tuple(records)
+    if not snapshot or not verify_audit_chain(snapshot):
+        return False
+    latest = snapshot[-1]
+    return (
+        latest.sequence == checkpoint.sequence
+        and latest.record_hash == checkpoint.record_hash
+    )
