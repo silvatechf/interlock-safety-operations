@@ -6,7 +6,12 @@ from datetime import UTC, datetime, timedelta
 from sentinel_interlock.security.approval_store import SQLiteApprovalStore
 from sentinel_interlock.security.engine import evaluate_access, evaluate_and_consume_approval
 from sentinel_interlock.security.models import (
-    AccessDecision, AccessPolicy, AccessReasonCode, AccessRequest, DevicePosture, SessionGrant,
+    AccessDecision,
+    AccessPolicy,
+    AccessReasonCode,
+    AccessRequest,
+    DevicePosture,
+    SessionGrant,
 )
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
