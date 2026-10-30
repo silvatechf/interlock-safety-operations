@@ -22,4 +22,4 @@ Never put real credentials, access tokens, private keys, or production data into
 
 ## Scope
 
-These controls improve repository hygiene only. They do not establish operational safety, certification, or production readiness for Sentinel Interlock.
+These controls improve repository hygiene only. They do not establish operational safety, certification, or production readiness for Kernveil.
