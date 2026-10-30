@@ -17,6 +17,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 MAX_EVENT_PAYLOAD_BYTES: Final[int] = 1_048_576
 
 
+class EventPayloadTooLargeError(ValueError):
+    """Raised when a canonical event payload exceeds the configured byte limit."""
+
+
+
 class EventValidationStatus(StrEnum):
     VALID = "valid"
     REJECTED = "rejected"
@@ -91,7 +96,7 @@ def canonical_payload_sha256(payload: dict[str, Any]) -> str:
         allow_nan=False,
     ).encode("utf-8")
     if len(encoded) > MAX_EVENT_PAYLOAD_BYTES:
-        raise ValueError("event payload exceeds maximum size")
+        raise EventPayloadTooLargeError("event payload exceeds maximum size")
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -138,6 +143,9 @@ def validate_event(
     computed_digest: str | None
     try:
         computed_digest = canonical_payload_sha256(event.payload)
+    except EventPayloadTooLargeError:
+        computed_digest = None
+        reasons.append(EventReasonCode.PAYLOAD_TOO_LARGE)
     except (TypeError, ValueError, UnicodeError, RecursionError):
         computed_digest = None
         reasons.append(EventReasonCode.PAYLOAD_NOT_CANONICAL_JSON)
