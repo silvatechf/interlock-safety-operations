@@ -40,7 +40,8 @@ def make_request(**overrides: object) -> AccessRequest:
             "posture": DevicePosture.HEALTHY, "observed_at": NOW,
         },
         "session": {
-            "session_id": "session-1", "scopes": frozenset({"secrets.read"}),
+            "session_id": "session-1", "subject_id": "operator-1",
+            "device_id": "workstation-1", "scopes": frozenset({"secrets.read"}),
             "expires_at": NOW + timedelta(minutes=10),
         },
         "action": "secrets.read", "resource": "vault://production/team-a",
@@ -93,6 +94,20 @@ def test_revoked_session_is_denied() -> None:
     result = evaluate_access(make_request(session=session), make_policy(), now=NOW)
     assert result.decision is AccessDecision.DENY
     assert AccessReasonCode.SESSION_REVOKED in result.reason_codes
+
+
+def test_session_bound_to_another_subject_is_denied() -> None:
+    session = make_request().session.model_copy(update={"subject_id": "operator-2"})
+    result = evaluate_access(make_request(session=session), make_policy(), now=NOW)
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_SUBJECT_MISMATCH in result.reason_codes
+
+
+def test_session_bound_to_another_device_is_denied() -> None:
+    session = make_request().session.model_copy(update={"device_id": "workstation-2"})
+    result = evaluate_access(make_request(session=session), make_policy(), now=NOW)
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_DEVICE_MISMATCH in result.reason_codes
 
 
 def test_action_outside_session_scope_is_denied() -> None:
