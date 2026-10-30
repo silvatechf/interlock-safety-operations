@@ -95,7 +95,7 @@ The initial `sentinel_interlock.events` module now validates a versioned synthet
 
 ## Kernveil Resilience Lab — planned
 
-The initial road-disruption simulator is implemented in `sentinel_interlock.road_simulator`. It runs six deterministic scenarios: healthy report, traffic-signal outage, stale report, duplicate delivery, unknown source, and contradictory reports. It classifies the information for review and never issues right-of-way, route, or driver instructions. Controlled fault injection, richer correlation, and evidence reports remain planned.
+The initial road-disruption simulator is implemented in `sentinel_interlock.road_simulator` and can be run with `python examples/road_resilience_demo.py`. It runs six deterministic scenarios: healthy report, traffic-signal outage, stale report, duplicate delivery, unknown source, and contradictory reports. It classifies the information for review and never issues right-of-way, route, or driver instructions. Controlled fault injection, richer correlation, and evidence reports remain planned.
 
 See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadmap.md). Fault injection, richer correlation, and evidence reporting remain planned.
 
