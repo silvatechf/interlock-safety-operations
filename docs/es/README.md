@@ -59,6 +59,12 @@ python examples/demo.py
 pytest
 ```
 
+## Identidad del paquete
+
+La distribución Python instalable se llama `kernveil`. El namespace de importación existente se mantiene intencionadamente como `sentinel_interlock` para preservar las rutas actuales de importación mientras se consolida la identidad pública del producto. Instala el proyecto con `python -m pip install -e ".[dev]"` y continúa importando los módulos desde `sentinel_interlock`.
+
+Si actualizas un entorno que instaló anteriormente la distribución `sentinel-interlock`, crea de nuevo el entorno virtual antes de instalar esta versión para evitar metadatos de distribución obsoletos.
+
 La demostración actual muestra una decisión ilustrativa ALLOW y dos DENY, con códigos de motivo y evidencia JSON versionada. Los datos son afirmaciones sintéticas, no datos de sensores confiables; no se ejecuta ningún comando ni se contacta con sistemas externos. ALLOW no constituye una garantía de seguridad real.
 
 ## Prácticas de ingeniería demostradas
