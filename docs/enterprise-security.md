@@ -18,6 +18,12 @@ The `sentinel_interlock.security.models` module defines strict, immutable Pydant
 
 An explicit denial takes precedence over indeterminate findings. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
 
+## Property-based verification
+
+`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session scopes, privileged action approval, and identity issuer. The properties assert that revoked sessions, non-healthy devices, stale evidence, missing scopes, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
+
+These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
+
 ## Trust boundaries and limitations
 
 All identity, device, session, and approval attributes are caller-supplied assertions. A string naming an identity issuer or EDR source does not authenticate that source. A `healthy` posture value is not proof of endpoint health. Authentication method labels are not cryptographic proof of MFA. Approval assertions are not signed, and distinct subject identifiers do not prove organizational independence.
