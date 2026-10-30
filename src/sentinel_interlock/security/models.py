@@ -43,6 +43,7 @@ class AccessReasonCode(StrEnum):
     APPROVAL_REQUIRED = "approval_required"
     APPROVAL_INVALID = "approval_invalid"
     APPROVAL_EXPIRED = "approval_expired"
+    APPROVAL_NOT_YET_VALID = "approval_not_yet_valid"
     APPROVER_NOT_INDEPENDENT = "approver_not_independent"
 
 
