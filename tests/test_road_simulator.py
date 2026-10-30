@@ -28,9 +28,9 @@ def test_healthy_synthetic_report_is_consistent() -> None:
 def test_traffic_signal_outage_is_reported_without_right_of_way_decision() -> None:
     result = results_by_id()["traffic-signal-outage"]
 
-    assert result.review_status is RoadReviewStatus.CONSISTENT
+    assert result.review_status is RoadReviewStatus.REVIEW_REQUIRED
     assert RoadFindingCode.TRAFFIC_SIGNAL_OUTAGE_REPORTED in result.findings
-    assert RoadFindingCode.HUMAN_REVIEW_REQUIRED not in result.findings
+    assert RoadFindingCode.HUMAN_REVIEW_REQUIRED in result.findings
 
 
 def test_stale_report_requires_human_review() -> None:
