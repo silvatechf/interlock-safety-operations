@@ -4,7 +4,7 @@
 
 Kernveil es un proyecto experimental en Python para evaluar la fiabilidad de eventos operativos sintéticos, detectar determinadas incoherencias y fallos de comunicación, y generar evidencias explicables. El núcleo es independiente del dominio; el transporte es la primera familia de aplicación y la simulación de incidencias viales será el primer nuevo demostrador. Los adaptadores ferroviarios, aeronáuticos y marítimos son posibles etapas posteriores.
 
-El MVP actual combina un motor genérico de evaluación de políticas con ejemplos sintéticos ferroviarios y de operaciones IT. La validación de eventos y las capacidades multidominio de Resilience Lab están planificadas, pero todavía no están implementadas.
+El MVP actual combina un motor genérico de evaluación de políticas con ejemplos sintéticos ferroviarios y de operaciones IT. La validación inicial de eventos ya está implementada en `sentinel_interlock.events`: sobre versionado, lista de fuentes declaradas, vigencia, caducidad, secuencia, repetición e integridad del payload mediante digest. La correlación, la inyección de fallos y los adaptadores de resiliencia multidominio siguen planificados.
 
 > **Límite de seguridad:** es un prototipo de investigación y portfolio. No es un servicio de navegación, una plataforma de gestión del tráfico, un enclavamiento ferroviario, un sistema de control aeronáutico o marítimo, un controlador industrial ni un componente certificado. No debe conectarse a infraestructuras reales, vehículos, señalización, frenado, despacho, controladores de semáforos, PLC/SCADA o sistemas de producción. No emite instrucciones de circulación ni determina prioridades de paso. Ninguna tecnología garantiza riesgo cero o elimina todos los fallos.
 
@@ -72,7 +72,7 @@ La demostración actual muestra una decisión ilustrativa ALLOW y dos DENY, con 
 
 ## Kernveil Resilience Lab — planificado
 
-La siguiente etapa definirá un sobre de eventos versionado, validaciones deterministas de confianza, vigencia, secuencia y repetición, reglas de correlación e inyección reproducible de fallos. El primer nuevo dominio será la simulación de incidencias viales, incluidos semáforos averiados y reportes de incidentes contradictorios o caducados. Todos los datos serán sintéticos y el funcionamiento será local.
+La siguiente etapa añadirá reglas de correlación, inyección reproducible de fallos y un simulador de incidencias viales: semáforos averiados e informes contradictorios o caducados. Todos los datos serán sintéticos y el funcionamiento será local.
 
 Consulta el [diseño de Resilience Lab](../resilience-lab.md) y la [hoja de ruta](../roadmap.md). Estas capacidades están planificadas, no implementadas en el MVP actual.
 
