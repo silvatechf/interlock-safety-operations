@@ -43,7 +43,10 @@ def make_request(**overrides: object) -> AccessRequest:
         },
         "session": {
             "session_id": "session-1", "subject_id": "operator-1",
-            "device_id": "workstation-1", "grants": frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)}),
+            "device_id": "workstation-1",
+            "grants": frozenset(
+                {SessionGrant(action="secrets.read", resource=RESOURCE)}
+            ),
             "expires_at": NOW + timedelta(minutes=10),
         },
         "action": "secrets.read", "resource": RESOURCE,
@@ -120,7 +123,8 @@ def test_action_resource_pair_outside_session_grants_is_denied() -> None:
 
 
 def test_same_action_on_different_resource_is_denied() -> None:
-    result = evaluate_access(make_request(resource="vault://development/team-a"), make_policy(), now=NOW)
+    request = make_request(resource="vault://development/team-a")
+    result = evaluate_access(request, make_policy(), now=NOW)
     assert result.decision is AccessDecision.DENY
     assert AccessReasonCode.SESSION_SCOPE_INSUFFICIENT in result.reason_codes
 
