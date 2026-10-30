@@ -36,11 +36,11 @@ flowchart TD
     H --> I["Local evidence and scenario report"]
 ```
 
-This is conceptual, not a deployed operational architecture. The current policy engine and event validator are the starting foundation. Correlation, fault injection, domain adapters beyond existing examples, and the inspection interface remain future work.
+This is conceptual, not a deployed operational architecture. The current policy engine, event validator, and initial road scenario simulator are implemented. Controlled fault injection, richer incident correlation, domain adapters beyond existing examples, and the inspection interface remain future work.
 
 ## Implemented foundation
 
-The new `sentinel_interlock.events` module currently provides:
+The `sentinel_interlock.events` module currently provides:
 - a versioned, validated synthetic event envelope;
 - timezone-aware event timestamps and expiry consistency;
 - caller-supplied source allow-list checks;
@@ -50,7 +50,7 @@ The new `sentinel_interlock.events` module currently provides:
 - explicit VALID, REJECTED, and INDETERMINATE outcomes with stable reason codes;
 - rejection of malformed/non-JSON and oversized payloads.
 
-These are bounded validation checks, not authenticated source identity or trusted sensor provenance. The validator is stateless: callers supply replay state, and the module does not persist or update it. A digest is not a signature. The module does not yet correlate reports, establish independent corroboration, inject faults, or provide road/rail/aviation/maritime operational semantics.
+These are bounded validation checks, not authenticated source identity or trusted sensor provenance. The validator is stateless: callers supply replay state, and the module does not persist or update it. A digest is not a signature. The module does not authenticate sources or establish independent corroboration. The separate road simulator performs only a narrow same-subject state-conflict check; it does not establish source independence or causal correlation.
 
 ## Proposed components
 
@@ -80,7 +80,7 @@ Planned deterministic checks:
 
 Do not equate multiple reports with independent corroboration: their provenance and correlation may be shared. Statistical or ML anomaly detection may be explored later as an advisory signal, never as the sole decision gate.
 
-### Domain adapters
+### Initial road simulator\n\nImplemented in `src/sentinel_interlock/road_simulator.py` with an executable example at `examples/road_resilience_demo.py`. The deterministic suite covers a healthy report, a reported traffic-signal outage, a stale report, duplicate event delivery, an unlisted source, and contradictory claims about one road segment. Results contain validation outcomes, reason codes, review status, and conflicting subject identifiers. A reported traffic-signal outage is flagged for human review; the prototype does not infer right-of-way or tell anyone to proceed.\n\nThe simulator uses caller-provided synthetic fixtures and an in-memory replay window for one scenario run. It does not yet model independent corroboration, probabilistic confidence, collision/closure scenarios, transport faults, persistent replay state, or external data feeds.\n\n### Domain adapters
 
 Adapters translate domain-specific event types into explicit context and policy inputs. The first adapter should be road-disruption simulation: traffic-light outage, collision, road closure, debris/hazard report, stale report, duplicate crowd-sourced report, and contradictory reports.
 
@@ -145,11 +145,11 @@ Every metric must state its test corpus, environment, assumptions, and limitatio
 - [ ] Add broader property-based tests and fuzzing for event inputs.
 
 ### Phase 3 — Road-disruption simulator
-- [ ] Add deterministic synthetic event producers and fixtures.
-- [ ] Model traffic-light outage, collision, road closure, hazard reports, duplicate reports, and contradictory information.
+- [x] Add deterministic synthetic event producers and fixtures for the initial six scenarios.
+- [x] Model traffic-signal outage, hazard reports, duplicate delivery, stale reports, unknown sources, and contradictory information.\n- [ ] Extend the simulator with collision and road-closure scenarios.
 - [ ] Add latency, loss, duplication, reordering, corruption, outage, and clock-skew injectors.
-- [ ] Make scenarios reproducible and safe to run offline.
-- [ ] Add regression fixtures for each documented failure.
+- [x] Make the initial scenarios reproducible and safe to run offline.
+- [x] Add regression tests for the initial scenario suite.\n- [ ] Add regression fixtures for transport-level faults and recovery.
 
 ### Phase 4 — Domain adapters
 - [ ] Reuse the core contracts for a railway-inspired resilience adapter.
