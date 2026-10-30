@@ -63,7 +63,10 @@ def test_stale_event_is_rejected() -> None:
 
 def test_expired_event_is_rejected() -> None:
     result = validate_event(
-        make_event(expires_at=NOW - timedelta(seconds=1)),
+        make_event(
+            occurred_at=NOW - timedelta(minutes=10),
+            expires_at=NOW - timedelta(seconds=1),
+        ),
         trusted_sources=TRUSTED,
         now=NOW,
     )
@@ -152,3 +155,20 @@ def test_replay_state_is_not_mutated() -> None:
     )
     assert seen == frozenset()
     assert last_sequence == {"road-sensor-a": 0}
+
+
+
+def test_oversized_payload_is_rejected() -> None:
+    event = make_event(payload={"report": "x" * 1_048_577})
+    result = validate_event(event, trusted_sources=TRUSTED, now=NOW)
+
+    assert result.status is EventValidationStatus.REJECTED
+    assert EventReasonCode.PAYLOAD_TOO_LARGE in result.reason_codes
+
+
+def test_non_json_payload_is_rejected() -> None:
+    event = make_event(payload={"not_json": object()})
+    result = validate_event(event, trusted_sources=TRUSTED, now=NOW)
+
+    assert result.status is EventValidationStatus.REJECTED
+    assert EventReasonCode.PAYLOAD_NOT_CANONICAL_JSON in result.reason_codes
