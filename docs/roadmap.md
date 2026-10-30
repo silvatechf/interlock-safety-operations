@@ -35,10 +35,10 @@
 - [ ] Define durable source identity, trust lifecycle, and replay-state persistence.
 
 ## Milestone 5 — Road-disruption simulator (first new domain)
-- [ ] Model synthetic traffic-light outage, collision, road closure, debris/hazard, and contradictory reports.
-- [ ] Distinguish fresh, stale, duplicated, correlated, untrusted, and indeterminate reports.
+- [x] Model synthetic traffic-signal outage, hazard reports, and contradictory reports.\n- [ ] Extend fixtures to collision and road-closure scenarios.
+- [x] Distinguish fresh, stale, duplicated, untrusted, and indeterminate reports.\n- [ ] Add semantic incident correlation and independent-source provenance assumptions.
 - [ ] Demonstrate advisory classification without right-of-way, route-control, or driver-instruction decisions.
-- [ ] Add labelled fixtures and reproducible tests for each scenario.
+- [x] Add labelled fixtures and reproducible tests for the initial scenario suite.\n- [ ] Expand regression fixtures to collision, road closure, and recovery cases.
 
 ## Milestone 6 — Additional transport adapters
 - [ ] Reuse the domain-neutral contracts for a railway-inspired resilience adapter.
