@@ -52,6 +52,10 @@ def evaluate_access(
     elif device.posture is DevicePosture.UNKNOWN:
         indeterminate.append(AccessReasonCode.DEVICE_POSTURE_UNKNOWN)
 
+    if session.subject_id != identity.subject_id:
+        denied.append(AccessReasonCode.SESSION_SUBJECT_MISMATCH)
+    if session.device_id != device.device_id:
+        denied.append(AccessReasonCode.SESSION_DEVICE_MISMATCH)
     if session.revoked:
         denied.append(AccessReasonCode.SESSION_REVOKED)
     if evaluated_at >= session.expires_at:
