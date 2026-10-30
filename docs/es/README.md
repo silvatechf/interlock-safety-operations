@@ -76,6 +76,14 @@ El simulador vial inicial está implementado en `sentinel_interlock.road_simulat
 
 Consulta el [diseño de Resilience Lab](../resilience-lab.md) y la [hoja de ruta](../roadmap.md). La inyección de fallos, la correlación avanzada y los informes de evidencia siguen planificados.
 
+## Enterprise Security
+
+El paquete `sentinel_interlock.security` implementa un primer Policy Decision Point (PDP) para escenarios sintéticos de acceso privilegiado. Sus contratos Pydantic representan identidad, postura del dispositivo, sesión, aprobación, solicitud, política y evidencia.
+
+El evaluador devuelve ALLOW cuando pasan todos los controles configurados, DENY ante una violación explícita e INDETERMINATE cuando la evidencia es insuficiente. Las señales son afirmaciones del caller: no se verifican firmas OIDC/JWT, certificados de dispositivo ni aprobaciones criptográficas. No existe revocación real, PEP ni integración de enforcement.
+
+Consulta el [alcance técnico de Enterprise Security](../enterprise-security.md).
+
 ## Estado
 
 Implementación de referencia en fase de portfolio. Las pruebas actuales solo demuestran las propiedades que cubren; no demuestran seguridad operativa ni idoneidad para producción.
