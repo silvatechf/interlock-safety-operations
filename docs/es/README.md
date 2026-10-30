@@ -80,7 +80,7 @@ Consulta el [diseño de Resilience Lab](../resilience-lab.md) y la [hoja de ruta
 
 El paquete `sentinel_interlock.security` implementa un primer Policy Decision Point (PDP) para escenarios sintéticos de acceso privilegiado. Sus contratos Pydantic representan identidad, postura del dispositivo, sesión, aprobación, solicitud, política y evidencia.
 
-El evaluador devuelve ALLOW cuando pasan todos los controles configurados, DENY ante una violación explícita e INDETERMINATE cuando la evidencia es insuficiente. Las señales son afirmaciones del caller: no se verifican firmas OIDC/JWT, certificados de dispositivo ni aprobaciones criptográficas. No existe revocación real, PEP ni integración de enforcement.
+El evaluador devuelve ALLOW cuando pasan todos los controles configurados, DENY ante una violación explícita e INDETERMINATE cuando la evidencia es insuficiente. Los permisos de sesión vinculan una acción y un recurso exactos: autorizar la lectura de una bóveda no autoriza la lectura de otra. No hay comodines ni coincidencias por prefijo; los identificadores de recurso son cadenas opacas y sensibles a mayúsculas. Las señales son afirmaciones del caller: no se verifican firmas OIDC/JWT, certificados de dispositivo ni aprobaciones criptográficas. No existe revocación real, PEP ni integración de enforcement.
 
 Consulta el [alcance técnico de Enterprise Security](../enterprise-security.md).
 
