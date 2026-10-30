@@ -10,7 +10,7 @@ The module is a **Policy Decision Point (PDP)**. It is not a Policy Enforcement 
 
 The `sentinel_interlock.security.models` module defines strict, immutable Pydantic contracts for identity, device, session, approval, access request, policy, and decision evidence. Extra fields are rejected and timestamps must be timezone-aware.
 
-Each session assertion is bound to both a subject identifier and a device identifier. The evaluator denies a request when either binding differs from the identity or device assertion in the same request. This prevents accidental cross-composition of otherwise valid synthetic assertions; it does not cryptographically establish that the bindings are authentic.
+Each session assertion is bound to a subject identifier, a device identifier, and a set of exact `SessionGrant` pairs. Every grant contains one action and one resource identifier. The evaluator requires an exact pair match: granting `secrets.read` on `vault://production/team-a` does not grant the same action on `vault://development/team-a`. There are no wildcard, prefix, or pattern semantics. Resource identifiers are opaque, case-sensitive strings; the evaluator does not canonicalize or interpret their URI syntax. Subject/device binding and grant membership are consistency checks over caller-supplied values, not cryptographic proof of authenticity.
 
 `evaluate_access()` returns one of three outcomes:
 
@@ -22,7 +22,7 @@ An explicit denial takes precedence over indeterminate findings. The evaluator i
 
 ## Property-based verification
 
-`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, session scopes, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing scopes, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
+`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, exact session action/resource grants, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing or resource-mismatched grants, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
 
 These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
 
