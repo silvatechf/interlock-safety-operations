@@ -42,6 +42,12 @@ flowchart TD
 - **Serialization — `serialization.py`:** versioned JSON conversion with deterministic key ordering, a 1 MiB payload limit, duplicate-key rejection, and rejection of non-standard/non-finite numbers and schema-invalid decisions.
 - **Evidence chain — `evidence_chain.py`:** caller-managed, in-memory chain over serialized decisions. Each record commits to its sequence, previous hash, and payload with SHA-256 over canonical JSON. The chain is not automatically attached to the session or ledger; the caller explicitly appends decisions.
 
+## Event validation foundation
+
+The `events.py` module defines a versioned `OperationalEvent` envelope and a deterministic `validate_event()` function. It checks a caller-supplied source allow-list, freshness and expiry, duplicate event IDs and sequence progression against caller-supplied replay state, and canonical payload digest consistency. Results distinguish `VALID`, `REJECTED`, and `INDETERMINATE` and include stable reason codes.
+
+The validator is stateless: it does not persist or mutate replay state. A source allow-list entry is not cryptographic identity, a payload digest is not a signature, and a `VALID` result means only that the configured checks passed for the supplied assertions. Event correlation, independent corroboration, fault injection, and domain-specific road scenarios remain planned work.
+
 ## Data and trust boundaries
 
 The caller supplies commands, context facts, policy configuration, and timestamps. The engine treats these as assertions, not independently verified truth. An `actor_id` is not proof of identity, and adapter facts are not proof of sensor provenance. The package does not authenticate callers, validate facts against trusted sensors, authorize policy authors, or govern policy changes.
