@@ -4,8 +4,8 @@ This package evaluates caller-supplied security assertions. It does not
 authenticate identities, inspect endpoints, revoke real sessions, or enforce access.
 """
 
-from .engine import evaluate_access, evaluate_and_consume_approval
 from .approval_store import SQLiteApprovalStore
+from .engine import evaluate_access, evaluate_and_consume_approval
 from .models import (
     AccessDecision,
     AccessEvidence,
@@ -20,6 +20,12 @@ from .models import (
 
 __all__ = [
     "AccessDecision", "AccessEvidence", "AccessPolicy", "AccessRequest",
-    "ApprovalAssertion", "SQLiteApprovalStore", "DeviceAssertion", "DevicePosture", "IdentityAssertion",
-    "SessionAssertion", "evaluate_access", "evaluate_and_consume_approval",
+    "ApprovalAssertion",
+    "DeviceAssertion",
+    "DevicePosture",
+    "IdentityAssertion",
+    "SQLiteApprovalStore",
+    "SessionAssertion",
+    "evaluate_access",
+    "evaluate_and_consume_approval",
 ]

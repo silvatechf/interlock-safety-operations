@@ -135,3 +135,34 @@ def evaluate_access(
         action=request.action,
         resource=request.resource,
     )
+
+
+def evaluate_and_consume_approval(
+    request: AccessRequest,
+    policy: AccessPolicy,
+    approval_store: ApprovalStore,
+    *,
+    now: datetime | None = None,
+) -> AccessEvidence:
+    """Evaluate policy and atomically consume approval only after an ALLOW."""
+    evidence = evaluate_access(request, policy, now=now)
+    if (
+        evidence.decision is not AccessDecision.ALLOW
+        or request.action not in policy.privileged_actions
+        or request.approval is None
+    ):
+        return evidence
+
+    consumed = approval_store.consume(
+        request.approval.approval_id,
+        consumed_at=evidence.evaluated_at,
+        decision_id=evidence.decision_id,
+    )
+    if consumed:
+        return evidence
+    return evidence.model_copy(
+        update={
+            "decision": AccessDecision.DENY,
+            "reason_codes": (AccessReasonCode.APPROVAL_ALREADY_CONSUMED,),
+        }
+    )
