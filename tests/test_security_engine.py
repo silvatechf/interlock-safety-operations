@@ -11,9 +11,11 @@ from sentinel_interlock.security.models import (
     AccessRequest,
     DevicePosture,
     IdentityAssertion,
+    SessionGrant,
 )
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
+RESOURCE = "vault://production/team-a"
 
 
 def make_policy(**overrides: object) -> AccessPolicy:
@@ -41,13 +43,13 @@ def make_request(**overrides: object) -> AccessRequest:
         },
         "session": {
             "session_id": "session-1", "subject_id": "operator-1",
-            "device_id": "workstation-1", "scopes": frozenset({"secrets.read"}),
+            "device_id": "workstation-1", "grants": frozenset({SessionGrant(action="secrets.read", resource=RESOURCE)}),
             "expires_at": NOW + timedelta(minutes=10),
         },
-        "action": "secrets.read", "resource": "vault://production/team-a",
+        "action": "secrets.read", "resource": RESOURCE,
         "approval": {
             "approver_subject_id": "approver-2", "action": "secrets.read",
-            "resource": "vault://production/team-a", "approved_at": NOW - timedelta(seconds=10),
+            "resource": RESOURCE, "approved_at": NOW - timedelta(seconds=10),
             "expires_at": NOW + timedelta(minutes=2),
         },
     }
@@ -110,9 +112,15 @@ def test_session_bound_to_another_device_is_denied() -> None:
     assert AccessReasonCode.SESSION_DEVICE_MISMATCH in result.reason_codes
 
 
-def test_action_outside_session_scope_is_denied() -> None:
-    session = make_request().session.model_copy(update={"scopes": frozenset()})
+def test_action_resource_pair_outside_session_grants_is_denied() -> None:
+    session = make_request().session.model_copy(update={"grants": frozenset()})
     result = evaluate_access(make_request(session=session), make_policy(), now=NOW)
+    assert result.decision is AccessDecision.DENY
+    assert AccessReasonCode.SESSION_SCOPE_INSUFFICIENT in result.reason_codes
+
+
+def test_same_action_on_different_resource_is_denied() -> None:
+    result = evaluate_access(make_request(resource="vault://development/team-a"), make_policy(), now=NOW)
     assert result.decision is AccessDecision.DENY
     assert AccessReasonCode.SESSION_SCOPE_INSUFFICIENT in result.reason_codes
 
