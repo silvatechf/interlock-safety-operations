@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from .models import (
-    AccessDecision, AccessEvidence, AccessPolicy, AccessReasonCode, AccessRequest,
+    AccessDecision,
+    AccessEvidence,
+    AccessPolicy,
+    AccessReasonCode,
+    AccessRequest,
     DevicePosture,
 )
 
@@ -84,9 +88,15 @@ def evaluate_access(
         decision, reasons = AccessDecision.ALLOW, ()
 
     return AccessEvidence(
-        decision_id=str(uuid4()), policy_id=policy.policy_id,
-        policy_version=policy.version, decision=decision, reason_codes=reasons,
-        evaluated_at=evaluated_at, subject_id=identity.subject_id,
-        device_id=device.device_id, session_id=session.session_id,
-        action=request.action, resource=request.resource,
+        decision_id=str(uuid4()),
+        policy_id=policy.policy_id,
+        policy_version=policy.version,
+        decision=decision,
+        reason_codes=reasons,
+        evaluated_at=evaluated_at,
+        subject_id=identity.subject_id,
+        device_id=device.device_id,
+        session_id=session.session_id,
+        action=request.action,
+        resource=request.resource,
     )
