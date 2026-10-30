@@ -5,8 +5,12 @@ from pydantic import ValidationError
 
 from sentinel_interlock.security.engine import evaluate_access
 from sentinel_interlock.security.models import (
-    AccessDecision, AccessPolicy, AccessReasonCode, AccessRequest,
-    DevicePosture, IdentityAssertion,
+    AccessDecision,
+    AccessPolicy,
+    AccessReasonCode,
+    AccessRequest,
+    DevicePosture,
+    IdentityAssertion,
 )
 
 NOW = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
