@@ -89,9 +89,13 @@ The facts are caller-supplied synthetic assertions, not trusted sensor or identi
 
 These practices describe what is present in the repository; they do not mean all risks are eliminated or that the system is independently verified.
 
+## Event validation foundation
+
+The initial `sentinel_interlock.events` module now validates a versioned synthetic event envelope, declared source allow-lists, freshness and expiry, duplicate IDs, sequence progression, and canonical payload digest consistency. It returns explicit VALID, REJECTED, or INDETERMINATE outcomes with reason codes. Replay state and source trust are caller-supplied assertions; they are not durable or cryptographically authenticated. Correlation, fault injection, and domain adapters remain planned.
+
 ## Kernveil Resilience Lab — planned
 
-The next stage will define a versioned event envelope, deterministic trust/freshness/sequence/replay checks, correlation rules, and reproducible fault injection. The first new domain demonstrator will model road disruptions, including failed traffic lights and contradictory or stale incident reports. All inputs will be synthetic and offline.
+The next stage will add correlation rules, reproducible fault injection, and a road-disruption simulator for failed traffic lights and contradictory or stale incident reports. All inputs will be synthetic and offline.
 
 See the [Resilience Lab design](docs/resilience-lab.md) and [roadmap](docs/roadmap.md). These capabilities are planned, not implemented in the current MVP.
 
