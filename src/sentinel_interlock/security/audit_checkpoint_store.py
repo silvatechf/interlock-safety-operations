@@ -9,10 +9,16 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from enum import Enum
 from pathlib import Path
 from typing import Protocol
 
-from .approval_audit import AUDIT_CHAIN_SCHEMA_VERSION, ApprovalAuditCheckpoint
+from .approval_audit import (
+    AUDIT_CHAIN_SCHEMA_VERSION,
+    ApprovalAuditCheckpoint,
+    ApprovalAuditRecord,
+    verify_audit_checkpoint,
+)
 
 
 class ApprovalAuditCheckpointStore(Protocol):
@@ -120,3 +126,29 @@ class JsonFileApprovalAuditCheckpointStore:
                     os.unlink(temporary_path)
                 except FileNotFoundError:
                     pass
+
+
+class AuditCheckpointStatus(str, Enum):
+    """Result of comparing a persisted checkpoint with an audit snapshot."""
+
+    MISSING = "missing"
+    VALID = "valid"
+    INVALID = "invalid"
+
+
+def verify_stored_audit_checkpoint(
+    records: object,
+    store: ApprovalAuditCheckpointStore,
+) -> AuditCheckpointStatus:
+    """Load and verify a retained checkpoint against one audit-chain snapshot.
+
+    Missing checkpoints and mismatches are explicit outcomes. Storage I/O and
+    malformed-file errors intentionally propagate so callers cannot mistake
+    an unavailable or corrupt checkpoint for a valid chain.
+    """
+    checkpoint = store.load()
+    if checkpoint is None:
+        return AuditCheckpointStatus.MISSING
+    if not verify_audit_checkpoint(records, checkpoint):
+        return AuditCheckpointStatus.INVALID
+    return AuditCheckpointStatus.VALID

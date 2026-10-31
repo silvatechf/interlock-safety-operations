@@ -74,3 +74,81 @@ def test_save_requires_existing_parent_directory(tmp_path) -> None:
 
     with pytest.raises(FileNotFoundError):
         store.save(make_checkpoint())
+
+
+def make_audit_record():
+    import hashlib
+
+    from sentinel_interlock.security.approval_audit import (
+        AUDIT_CHAIN_SCHEMA_VERSION,
+        AUDIT_GENESIS_HASH,
+        ApprovalAuditRecord,
+    )
+
+    values = {
+        "schema_version": AUDIT_CHAIN_SCHEMA_VERSION,
+        "sequence": 0,
+        "decision_id": "decision-1",
+        "approval_id": None,
+        "key_id": None,
+        "decision": "deny",
+        "reason_codes": ["policy_denied"],
+        "evaluated_at": "2026-01-01T00:00:00+00:00",
+        "policy_sha256": "b" * 64,
+        "previous_hash": AUDIT_GENESIS_HASH,
+    }
+    payload = json.dumps(
+        values, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
+    return ApprovalAuditRecord(
+        sequence=0,
+        decision_id="decision-1",
+        approval_id=None,
+        key_id=None,
+        decision="deny",
+        reason_codes=("policy_denied",),
+        evaluated_at="2026-01-01T00:00:00+00:00",
+        policy_sha256="b" * 64,
+        previous_hash=AUDIT_GENESIS_HASH,
+        record_hash=hashlib.sha256(payload).hexdigest(),
+    )
+
+
+def test_verification_reports_missing_checkpoint(tmp_path) -> None:
+    from sentinel_interlock.security.audit_checkpoint_store import (
+        AuditCheckpointStatus,
+        verify_stored_audit_checkpoint,
+    )
+
+    store = JsonFileApprovalAuditCheckpointStore(tmp_path / "checkpoint.json")
+
+    assert verify_stored_audit_checkpoint((make_audit_record(),), store) is (
+        AuditCheckpointStatus.MISSING
+    )
+
+
+def test_verification_accepts_matching_checkpoint(tmp_path) -> None:
+    from sentinel_interlock.security.audit_checkpoint_store import (
+        AuditCheckpointStatus,
+        verify_stored_audit_checkpoint,
+    )
+
+    record = make_audit_record()
+    checkpoint = ApprovalAuditCheckpoint(1, 0, record.record_hash)
+    store = JsonFileApprovalAuditCheckpointStore(tmp_path / "checkpoint.json")
+    store.save(checkpoint)
+
+    assert verify_stored_audit_checkpoint((record,), store) is AuditCheckpointStatus.VALID
+
+
+def test_verification_rejects_mismatched_checkpoint(tmp_path) -> None:
+    from sentinel_interlock.security.audit_checkpoint_store import (
+        AuditCheckpointStatus,
+        verify_stored_audit_checkpoint,
+    )
+
+    record = make_audit_record()
+    store = JsonFileApprovalAuditCheckpointStore(tmp_path / "checkpoint.json")
+    store.save(ApprovalAuditCheckpoint(1, 0, "c" * 64))
+
+    assert verify_stored_audit_checkpoint((record,), store) is AuditCheckpointStatus.INVALID
