@@ -6,17 +6,17 @@ domain or external tamper-protection boundary.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Protocol
 
 from .approval_audit import (
     AUDIT_CHAIN_SCHEMA_VERSION,
     ApprovalAuditCheckpoint,
-    ApprovalAuditRecord,
     verify_audit_checkpoint,
 )
 
@@ -141,22 +141,18 @@ class JsonFileApprovalAuditCheckpointStore:
                 temporary.write(payload)
                 temporary.flush()
                 os.fsync(temporary.fileno())
-            try:
-                os.chmod(temporary_path, 0o600)
-            except OSError:
+            with contextlib.suppress(OSError):
                 # Windows and some filesystems do not expose POSIX permissions.
-                pass
+                os.chmod(temporary_path, 0o600)
             os.replace(temporary_path, self._path)
             temporary_path = None
         finally:
             if temporary_path is not None:
-                try:
+                with contextlib.suppress(FileNotFoundError):
                     os.unlink(temporary_path)
-                except FileNotFoundError:
-                    pass
 
 
-class AuditCheckpointStatus(str, Enum):
+class AuditCheckpointStatus(StrEnum):
     """Result of comparing a persisted checkpoint with an audit snapshot."""
 
     MISSING = "missing"
