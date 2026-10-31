@@ -76,7 +76,8 @@ class JsonFileApprovalAuditCheckpointStore:
     def load(self) -> ApprovalAuditCheckpoint | None:
         """Load a checkpoint; return None only when the file does not exist."""
         try:
-            raw_bytes = self._path.read_bytes()
+            with self._path.open("rb") as checkpoint_file:
+                raw_bytes = checkpoint_file.read(MAX_CHECKPOINT_FILE_BYTES + 1)
         except FileNotFoundError:
             return None
         except UnicodeDecodeError as exc:
