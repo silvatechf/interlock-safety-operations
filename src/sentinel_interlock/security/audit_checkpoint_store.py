@@ -29,6 +29,22 @@ class ApprovalAuditCheckpointStore(Protocol):
     def save(self, checkpoint: ApprovalAuditCheckpoint) -> None: ...
 
 
+MAX_CHECKPOINT_FILE_BYTES = 16 * 1024
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_non_json_constant(value: str) -> None:
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
 class JsonFileApprovalAuditCheckpointStore:
     """Persist a checkpoint as strict JSON using atomic same-directory replacement.
 
@@ -60,16 +76,27 @@ class JsonFileApprovalAuditCheckpointStore:
     def load(self) -> ApprovalAuditCheckpoint | None:
         """Load a checkpoint; return None only when the file does not exist."""
         try:
-            raw = self._path.read_text(encoding="utf-8")
+            raw_bytes = self._path.read_bytes()
         except FileNotFoundError:
             return None
         except UnicodeDecodeError as exc:
             raise ValueError("checkpoint file is not valid UTF-8 JSON") from exc
 
+        if len(raw_bytes) > MAX_CHECKPOINT_FILE_BYTES:
+            raise ValueError("checkpoint file exceeds the maximum allowed size")
         try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as exc:
+            raw = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError as exc:
             raise ValueError("checkpoint file is not valid UTF-8 JSON") from exc
+
+        try:
+            payload = json.loads(
+                raw,
+                object_pairs_hook=_reject_duplicate_keys,
+                parse_constant=_reject_non_json_constant,
+            )
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise ValueError("checkpoint file is not valid strict JSON") from exc
         if not isinstance(payload, dict) or set(payload) != {
             "schema_version", "sequence", "record_hash"
         }:

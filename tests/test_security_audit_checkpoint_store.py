@@ -152,3 +152,34 @@ def test_verification_rejects_mismatched_checkpoint(tmp_path) -> None:
     store.save(ApprovalAuditCheckpoint(1, 0, "c" * 64))
 
     assert verify_stored_audit_checkpoint((record,), store) is AuditCheckpointStatus.INVALID
+
+
+
+def test_load_rejects_duplicate_json_keys(tmp_path) -> None:
+    path = tmp_path / "checkpoint.json"
+    path.write_text(
+        '{"schema_version":1,"sequence":0,"sequence":7,"record_hash":"' + "a" * 64 + '"}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="strict JSON"):
+        JsonFileApprovalAuditCheckpointStore(path).load()
+
+
+def test_load_rejects_non_standard_json_constants(tmp_path) -> None:
+    path = tmp_path / "checkpoint.json"
+    path.write_text(
+        '{"schema_version":1,"sequence":NaN,"record_hash":"' + "a" * 64 + '"}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="strict JSON"):
+        JsonFileApprovalAuditCheckpointStore(path).load()
+
+
+def test_load_rejects_oversized_checkpoint_file(tmp_path) -> None:
+    path = tmp_path / "checkpoint.json"
+    path.write_bytes(b" " * (16 * 1024 + 1))
+
+    with pytest.raises(ValueError, match="maximum allowed size"):
+        JsonFileApprovalAuditCheckpointStore(path).load()
