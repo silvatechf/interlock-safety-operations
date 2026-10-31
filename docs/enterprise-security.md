@@ -35,7 +35,15 @@ The pure `evaluate_access()` function remains stateless and does not verify sign
 
 Audit records contain the decision reference, approval ID, key ID, outcome, reason codes, evaluation timestamp, and policy fingerprint. Subject identifiers, resource identifiers, raw assertions, signatures, and private keys are intentionally excluded from this audit projection. The records are linked with SHA-256 hashes and can be verified in sequence using `verify_audit_chain()` or `SQLiteApprovalStore.verify_audit_chain()`.
 
-The hash chain detects modification, reordering, and removal of intermediate records relative to the retained sequence. It does **not** prevent a privileged database writer from rewriting the entire database and recomputing the chain, nor can it detect deletion of a valid suffix without an independently retained checkpoint. `create_audit_checkpoint()` creates a portable checkpoint from a non-empty, verified chain; `verify_audit_checkpoint()` requires the supplied chain's latest record to match that checkpoint exactly. Callers must store checkpoints outside the audit database in an independently protected trust domain and refresh them as new records are appended. A stale checkpoint intentionally fails against a newer chain snapshot. The helper does not sign, transmit, or persist checkpoints, and a writer who can replace both the database and the external checkpoint can still rewrite history. There is no built-in remote anchoring, trusted timestamping, retention control, or immutable remote storage. Audit write failures raise an exception; callers must treat the decision workflow as failed rather than assume a decision was durably recorded.
+The hash chain detects modification, reordering, and removal of intermediate records relative to the retained sequence. It does **not** prevent a privileged database writer from rewriting the entire database and recomputing the chain, nor can it detect deletion of a valid suffix without an independently retained checkpoint. `create_audit_checkpoint()` creates a portable checkpoint from a non-empty, verified chain; `verify_audit_checkpoint()` requires the supplied chain's latest record to match that checkpoint exactly. Callers must store checkpoints outside the audit database in an independently protected trust domain and refresh them as new records are appended. A stale checkpoint intentionally fails against a newer chain snapshot. The helper does not sign, transmit, or persist checkpoints, and a writer who can replace both the database and the external checkpoint can still rewrite history.
+
+### Checkpoint persistence adapter
+
+`ApprovalAuditCheckpointStore` defines a minimal `load()` / `save()` persistence contract. `JsonFileApprovalAuditCheckpointStore` implements it with strict JSON parsing, structural validation, a same-directory temporary file, file flush, and atomic replacement. It applies POSIX mode `0600` on a best-effort basis where supported.
+
+This adapter is a **local file adapter**, not external anchoring. It does not create an independent trust domain when its file is stored on the same host or under the same administrator as the SQLite database. It has no inter-process locking, compare-and-swap, remote replication, signature, or rollback protection. Applications must coordinate a single writer, protect the parent directory, retain copies independently when tamper evidence is required, and call `verify_audit_checkpoint()` against the recovered audit chain. A missing checkpoint returns `None`; malformed or unsupported checkpoint data raises `ValueError`. File I/O errors propagate.
+
+There is no built-in remote anchoring, trusted timestamping, retention control, or immutable remote storage. Audit write failures raise an exception; callers must treat the decision workflow as failed rather than assume a decision was durably recorded.
 
 The older `consume()` method remains available for replay-only compatibility, but it does not create an audit record. Decision workflows must use `evaluate_and_consume_approval()`.
 
@@ -48,9 +56,7 @@ A production integration would need authenticated ingress, OIDC/JWT validation w
 ## Running the tests
 
 ```shell
-pytest tests/test_security_approval_replay.py tests/test_security_approval_audit.py
+pytest tests/test_security_approval_replay.py tests/test_security_approval_audit.py tests/test_security_audit_checkpoint_store.py
 ruff check .
 mypy src
 ```
-
-A passing synthetic test demonstrates only the tested decision behavior. It does not establish that an attacker is prevented from accessing a real company resource.

@@ -17,6 +17,10 @@ from .approval_signatures import (
     approval_signing_payload,
 )
 from .approval_store import SQLiteApprovalStore
+from .audit_checkpoint_store import (
+    ApprovalAuditCheckpointStore,
+    JsonFileApprovalAuditCheckpointStore,
+)
 from .engine import evaluate_access, evaluate_and_consume_approval
 from .models import (
     AccessDecision,
@@ -32,10 +36,10 @@ from .models import (
 
 __all__ = [
     "AccessDecision", "AccessEvidence", "AccessPolicy", "AccessRequest",
-    "ApprovalAssertion", "ApprovalAuditCheckpoint", "ApprovalAuditRecord",
-    "ApprovalVerificationKey", "Ed25519ApprovalVerifier",
-    "approval_signing_payload", "DeviceAssertion", "DevicePosture",
-    "IdentityAssertion", "SQLiteApprovalStore", "SessionAssertion",
-    "create_audit_checkpoint", "evaluate_access", "evaluate_and_consume_approval",
-    "verify_audit_chain", "verify_audit_checkpoint",
+    "ApprovalAssertion", "ApprovalAuditCheckpoint", "ApprovalAuditCheckpointStore",
+    "ApprovalAuditRecord", "ApprovalVerificationKey", "Ed25519ApprovalVerifier",
+    "JsonFileApprovalAuditCheckpointStore", "approval_signing_payload",
+    "DeviceAssertion", "DevicePosture", "IdentityAssertion", "SQLiteApprovalStore",
+    "SessionAssertion", "create_audit_checkpoint", "evaluate_access",
+    "evaluate_and_consume_approval", "verify_audit_chain", "verify_audit_checkpoint",
 ]
