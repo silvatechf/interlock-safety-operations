@@ -75,6 +75,17 @@ def test_expired_event_is_rejected() -> None:
     assert result.status is EventValidationStatus.REJECTED
 
 
+def test_event_is_expired_at_exact_expiry_boundary() -> None:
+    result = validate_event(
+        make_event(expires_at=NOW),
+        trusted_sources=TRUSTED,
+        now=NOW,
+    )
+
+    assert result.status is EventValidationStatus.REJECTED
+    assert EventReasonCode.EVENT_EXPIRED in result.reason_codes
+
+
 def test_future_event_beyond_tolerance_is_indeterminate() -> None:
     result = validate_event(
         make_event(occurred_at=NOW + timedelta(seconds=6), expires_at=None),

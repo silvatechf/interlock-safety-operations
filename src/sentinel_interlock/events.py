@@ -137,7 +137,7 @@ def validate_event(
     elif age_seconds < -max_future_skew_seconds:
         reasons.append(EventReasonCode.EVENT_FROM_FUTURE)
 
-    if event.expires_at is not None and evaluated_at > event.expires_at:
+    if event.expires_at is not None and evaluated_at >= event.expires_at:
         reasons.append(EventReasonCode.EVENT_EXPIRED)
 
     computed_digest: str | None
