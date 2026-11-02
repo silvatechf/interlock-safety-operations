@@ -141,33 +141,45 @@ def evaluate_and_consume_approval(
     approval_verifier: ApprovalVerifier,
     now: datetime | None = None,
 ) -> AccessEvidence:
-    """Evaluate policy and atomically consume approval only after an ALLOW."""
+    """Evaluate, verify, consume, and audit privileged approval decisions."""
     evidence = evaluate_access(request, policy, now=now)
+    approval = request.approval
+    approval_id = None if approval is None else approval.approval_id
+    key_id = None if approval is None else approval.key_id
+
     if (
         evidence.decision is not AccessDecision.ALLOW
         or request.action not in policy.privileged_actions
-        or request.approval is None
+        or approval is None
     ):
+        approval_store.record_decision(
+            evidence, approval_id=approval_id, key_id=key_id
+        )
         return evidence
 
-    if not approval_verifier.verify(request.approval, evaluated_at=evidence.evaluated_at):
-        return evidence.model_copy(
+    if not approval_verifier.verify(approval, evaluated_at=evidence.evaluated_at):
+        denied = evidence.model_copy(
             update={
                 "decision": AccessDecision.DENY,
                 "reason_codes": (AccessReasonCode.APPROVAL_SIGNATURE_INVALID,),
             }
         )
+        approval_store.record_decision(
+            denied, approval_id=approval_id, key_id=key_id
+        )
+        return denied
 
-    consumed = approval_store.consume(
-        request.approval.approval_id,
-        consumed_at=evidence.evaluated_at,
-        decision_id=evidence.decision_id,
-    )
-    if consumed:
-        return evidence
-    return evidence.model_copy(
+    replay_denied = evidence.model_copy(
         update={
             "decision": AccessDecision.DENY,
             "reason_codes": (AccessReasonCode.APPROVAL_ALREADY_CONSUMED,),
         }
     )
+    consumed = approval_store.consume_and_record(
+        approval.approval_id,
+        consumed_at=evidence.evaluated_at,
+        evidence=evidence,
+        replay_evidence=replay_denied,
+        key_id=key_id,
+    )
+    return evidence if consumed else replay_denied
