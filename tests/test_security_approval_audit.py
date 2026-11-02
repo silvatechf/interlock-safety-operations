@@ -118,6 +118,7 @@ def test_allow_and_replay_deny_are_both_audited(tmp_path) -> None:
     assert records[0].decision == "allow"
     assert records[0].reason_codes == ()
     assert records[1].decision == "deny"
+    assert records[0].decision_id != records[1].decision_id
     assert records[1].reason_codes == (AccessReasonCode.APPROVAL_ALREADY_CONSUMED.value,)
     assert all(item.approval_id == "approval-unique-001" for item in records)
     assert all(item.key_id == "approval-key-2026-01" for item in records)
@@ -188,7 +189,9 @@ def test_concurrent_replay_attempts_produce_one_allow_and_audit_every_result(tmp
 
     assert sum(item.decision is AccessDecision.ALLOW for item in results) == 1
     assert sum(item.decision is AccessDecision.DENY for item in results) == 15
-    assert len(store.audit_records()) == 16
+    records = store.audit_records()
+    assert len(records) == 16
+    assert len({record.decision_id for record in records}) == 16
     assert store.verify_audit_chain()
 
 

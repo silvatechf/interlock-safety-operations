@@ -171,6 +171,7 @@ def evaluate_and_consume_approval(
 
     replay_denied = evidence.model_copy(
         update={
+            "decision_id": str(uuid4()),
             "decision": AccessDecision.DENY,
             "reason_codes": (AccessReasonCode.APPROVAL_ALREADY_CONSUMED,),
         }
