@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -14,6 +16,29 @@ from .models import (
     DevicePosture,
     SessionGrant,
 )
+
+
+def _policy_fingerprint(policy: AccessPolicy) -> str:
+    """Return a stable SHA-256 fingerprint of the effective policy configuration."""
+    canonical_policy = {
+        "policy_id": policy.policy_id,
+        "version": policy.version,
+        "trusted_identity_issuers": sorted(policy.trusted_identity_issuers),
+        "trusted_device_sources": sorted(policy.trusted_device_sources),
+        "required_authentication_methods": sorted(policy.required_authentication_methods),
+        "privileged_actions": sorted(policy.privileged_actions),
+        "max_identity_age_seconds": policy.max_identity_age_seconds,
+        "max_device_posture_age_seconds": policy.max_device_posture_age_seconds,
+        "max_approval_age_seconds": policy.max_approval_age_seconds,
+    }
+    encoded = json.dumps(
+        canonical_policy,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def evaluate_access(
@@ -97,6 +122,7 @@ def evaluate_access(
         decision_id=str(uuid4()),
         policy_id=policy.policy_id,
         policy_version=policy.version,
+        policy_sha256=_policy_fingerprint(policy),
         decision=decision,
         reason_codes=reasons,
         evaluated_at=evaluated_at,

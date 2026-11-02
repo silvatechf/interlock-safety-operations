@@ -20,9 +20,17 @@ Each session assertion is bound to a subject identifier, a device identifier, an
 
 An explicit denial takes precedence over indeterminate findings. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
 
+## Policy fingerprint and evidence
+
+Every access decision includes a `policy_sha256` value: a SHA-256 fingerprint of the effective policy configuration used for that evaluation. The fingerprint includes the policy identifier and version, sorted trust and requirement sets, and all configured freshness limits. Sorting set-valued fields makes the fingerprint independent of their iteration order.
+
+The fingerprint makes configuration drift visible even when an operator accidentally reuses a policy version label. It is a content identifier, **not a digital signature**: it does not authenticate who created or approved the policy, prevent replacement, or prove that the policy was deployed. The policy object and its fingerprint remain caller-controlled inputs in this local prototype.
+
 ## Property-based verification
 
 `tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, exact session action/resource grants, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing or resource-mismatched grants, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
+
+`tests/test_security_engine.py` also verifies that equivalent set configurations produce the same policy fingerprint and that a changed effective configuration produces a different fingerprint even when the version label is unchanged.
 
 These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
 

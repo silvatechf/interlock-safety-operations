@@ -150,6 +150,7 @@ class AccessEvidence(_StrictModel):
     decision_id: str = Field(min_length=1, max_length=64)
     policy_id: str
     policy_version: str
+    policy_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     decision: AccessDecision
     reason_codes: tuple[AccessReasonCode, ...]
     evaluated_at: datetime
