@@ -18,7 +18,7 @@ Each session assertion is bound to a subject identifier, a device identifier, an
 - **DENY:** at least one explicit policy violation was found, such as an unauthenticated identity, compromised device, revoked/expired or mismatched session, insufficient scope, missing phishing-resistant authentication method, or invalid privileged approval.
 - **INDETERMINATE:** no explicit denial was found, but the evidence is insufficient to authorize confidently, for example an untrusted assertion issuer, unknown device posture, or stale device observation.
 
-An explicit denial takes precedence over indeterminate findings. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
+An explicit denial takes precedence over indeterminate findings. Approval timestamps in the future produce the distinct `APPROVAL_NOT_YET_VALID` reason; approvals older than the configured maximum age or expiring at the evaluation instant produce `APPROVAL_EXPIRED`. Expiry boundaries are exclusive: a session or approval is not valid when `evaluated_at >= expires_at`. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
 
 ## Policy fingerprint and evidence
 
@@ -30,7 +30,7 @@ The fingerprint makes configuration drift visible even when an operator accident
 
 `tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, exact session action/resource grants, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing or resource-mismatched grants, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
 
-`tests/test_security_engine.py` also verifies that equivalent set configurations produce the same policy fingerprint and that a changed effective configuration produces a different fingerprint even when the version label is unchanged.
+`tests/test_security_engine.py` also verifies that equivalent set configurations produce the same policy fingerprint and that a changed effective configuration produces a different fingerprint even when the version label is unchanged. `tests/test_security_approval_boundaries.py` verifies approval freshness boundaries, future-dated approvals, exact expiry behavior, resource binding, and denial precedence.
 
 These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
 
@@ -38,7 +38,7 @@ These tests exercise decision invariants over generated inputs. They do not veri
 
 All identity, device, session, and approval attributes are caller-supplied assertions. A string naming an identity issuer or EDR source does not authenticate that source. A `healthy` posture value is not proof of endpoint health. Authentication method labels are not cryptographic proof of MFA. Approval assertions are not signed, and distinct subject identifiers do not prove organizational independence.
 
-The prototype does not validate issuer signatures, token audiences, device certificates, attestation, session revocation feeds, approval signatures, policy governance, or trusted time. It has no persistence, API, distributed state, or external enforcement integration. The session `revoked` flag is an input assertion, not an active revocation mechanism.
+The prototype does not validate issuer signatures, token audiences, device certificates, attestation, session revocation feeds, approval signatures, policy governance, or trusted time. It has no persistence, API, distributed state, or external enforcement integration. The session `revoked` flag is an input assertion, not an active revocation mechanism. Approval assertions are stateless inputs: the same still-valid approval can be evaluated more than once. This prototype therefore does **not** provide one-time approval consumption or replay prevention; those controls require authenticated approval identifiers and durable, atomic consumption state.
 
 A production integration would need authenticated ingress, OIDC/JWT validation with issuer/audience/nonce and key-rotation handling, signed and fresh device posture from an EDR/MDM source, server-side session state, durable policy governance, independently authenticated approval, and a PEP that enforces the PDP decision. Those integrations are not implemented here.
 
