@@ -20,6 +20,10 @@
 
 ## Current mitigations
 
+- Versioned synthetic event envelope with timezone-aware timestamps.
+- Caller-configured source allow-list, freshness/expiry, duplicate ID, sequence, and canonical payload digest checks.
+- Explicit VALID, REJECTED, and INDETERMINATE event outcomes with stable reason codes.
+
 - Pydantic validation with extra fields forbidden.
 - Strict evidence JSON parsing: duplicate properties, non-standard numeric constants, and payloads above 1 MiB are rejected.
 - Explicit allow-lists and deny-by-default evaluation.
