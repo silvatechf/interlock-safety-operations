@@ -57,6 +57,7 @@ def make_request(**overrides: object) -> AccessRequest:
         "action": "secrets.read",
         "resource": RESOURCE,
         "approval": {
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
@@ -71,6 +72,7 @@ def make_request(**overrides: object) -> AccessRequest:
 def test_approval_at_maximum_age_boundary_is_accepted() -> None:
     request = make_request(
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
@@ -87,6 +89,7 @@ def test_approval_at_maximum_age_boundary_is_accepted() -> None:
 def test_approval_older_than_maximum_age_is_denied() -> None:
     request = make_request(
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
@@ -104,6 +107,7 @@ def test_approval_older_than_maximum_age_is_denied() -> None:
 def test_future_approval_is_denied_with_distinct_reason() -> None:
     request = make_request(
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
@@ -122,6 +126,7 @@ def test_future_approval_is_denied_with_distinct_reason() -> None:
 def test_approval_expiring_at_evaluation_time_is_denied() -> None:
     request = make_request(
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
@@ -139,6 +144,7 @@ def test_approval_expiring_at_evaluation_time_is_denied() -> None:
 def test_approval_for_another_resource_is_denied() -> None:
     request = make_request(
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": "vault://production/team-b",

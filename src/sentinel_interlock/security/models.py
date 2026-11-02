@@ -44,6 +44,7 @@ class AccessReasonCode(StrEnum):
     APPROVAL_INVALID = "approval_invalid"
     APPROVAL_EXPIRED = "approval_expired"
     APPROVAL_NOT_YET_VALID = "approval_not_yet_valid"
+    APPROVAL_ALREADY_CONSUMED = "approval_already_consumed"
     APPROVER_NOT_INDEPENDENT = "approver_not_independent"
 
 
@@ -98,6 +99,7 @@ class SessionAssertion(_StrictModel):
 
 
 class ApprovalAssertion(_StrictModel):
+    approval_id: str = Field(min_length=1, max_length=128)
     approver_subject_id: str = Field(min_length=1, max_length=128)
     action: str = Field(min_length=1, max_length=128)
     resource: str = Field(min_length=1, max_length=256)

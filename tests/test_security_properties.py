@@ -55,6 +55,7 @@ def make_request() -> AccessRequest:
         action="secrets.read",
         resource="vault://production/team-a",
         approval={
+            "approval_id": "approval-test-001",
             "approver_subject_id": "approver-2",
             "action": "secrets.read",
             "resource": RESOURCE,
