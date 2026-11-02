@@ -31,10 +31,10 @@ class ApprovalVerificationKey:
     revoked_at: datetime | None = None
 
     def __post_init__(self) -> None:
-        if not self.approver_subject_id.strip():
-            raise ValueError("trusted approver subject identifiers must not be blank")
-        if len(self.public_key) != 32:
-            raise ValueError("Ed25519 public keys must contain exactly 32 bytes")
+        if not isinstance(self.approver_subject_id, str) or not self.approver_subject_id.strip():
+            raise ValueError("trusted approver subject identifiers must be non-empty strings")
+        if type(self.public_key) is not bytes or len(self.public_key) != 32:
+            raise ValueError("Ed25519 public keys must be exactly 32 bytes")
         for name, value in (
             ("valid_from", self.valid_from),
             ("valid_until", self.valid_until),
@@ -76,8 +76,10 @@ class Ed25519ApprovalVerifier:
             raise ValueError("at least one trusted approval key is required")
         normalized: dict[str, ApprovalVerificationKey] = {}
         for key_id, key in trusted_keys.items():
-            if not key_id.strip():
-                raise ValueError("key identifiers must not be blank")
+            if not isinstance(key_id, str) or not key_id.strip():
+                raise ValueError("key identifiers must be non-empty strings")
+            if not isinstance(key, ApprovalVerificationKey):
+                raise TypeError("trusted key values must be ApprovalVerificationKey instances")
             normalized[key_id] = key
         self._trusted_keys = normalized
 
