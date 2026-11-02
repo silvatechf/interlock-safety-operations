@@ -70,6 +70,14 @@ The core remains domain-neutral. The railway-inspired and IT adapters are synthe
 
 This repository is a software reference and portfolio project, not an operational railway interlocking, safety controller, certified component, safety case, or production-ready control system. CI and tests provide software-quality evidence only; they do not establish operational safety or regulatory compliance.
 
+## Enterprise security decision path
+
+The `sentinel_interlock.security` package is an initial Policy Decision Point (PDP) prototype. Strict Pydantic contracts represent identity, device posture, session, approval, access request, policy, and decision evidence. The evaluator checks issuer/source allow-list assertions, assertion freshness, authentication-method requirements, device posture, session revocation/expiry/scope, and independent approval assertions.
+
+It returns ALLOW when configured checks pass, DENY for explicit policy violations, and INDETERMINATE when evidence is insufficient. All values are caller-supplied assertions: this code does not authenticate identity providers, verify endpoint attestation, validate signed approvals, revoke real sessions, persist state, expose an API, or enforce decisions through a PEP. Distinct subject IDs do not prove organizational independence.
+
+See [enterprise security scope](enterprise-security.md) for trust boundaries and integration requirements.
+
 ## Known gaps
 
 Durable replay defense and idempotency, cryptographically bound identity, trusted sensor provenance, signed or externally anchored evidence, durable storage, distributed consistency, trusted time, policy governance and rollback, independent verification, broader fuzzing/fault injection, and domain-specific hazard analysis remain unimplemented.
