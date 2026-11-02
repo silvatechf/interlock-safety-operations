@@ -7,6 +7,7 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from .approval_signatures import ApprovalVerifier
 from .approval_store import ApprovalStore
 from .models import (
     AccessDecision,
@@ -142,6 +143,7 @@ def evaluate_and_consume_approval(
     policy: AccessPolicy,
     approval_store: ApprovalStore,
     *,
+    approval_verifier: ApprovalVerifier,
     now: datetime | None = None,
 ) -> AccessEvidence:
     """Evaluate policy and atomically consume approval only after an ALLOW."""
@@ -152,6 +154,14 @@ def evaluate_and_consume_approval(
         or request.approval is None
     ):
         return evidence
+
+    if not approval_verifier.verify(request.approval):
+        return evidence.model_copy(
+            update={
+                "decision": AccessDecision.DENY,
+                "reason_codes": (AccessReasonCode.APPROVAL_SIGNATURE_INVALID,),
+            }
+        )
 
     consumed = approval_store.consume(
         request.approval.approval_id,
