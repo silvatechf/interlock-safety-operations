@@ -262,6 +262,26 @@ def test_rotation_allows_old_and_new_keys_during_overlap(tmp_path) -> None:
     assert new_result.decision is AccessDecision.ALLOW
 
 
+def test_key_configuration_rejects_non_bytes_public_key() -> None:
+    with pytest.raises(ValueError, match="exactly 32 bytes"):
+        ApprovalVerificationKey(APPROVER, "x" * 32)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="exactly 32 bytes"):
+        ApprovalVerificationKey(APPROVER, bytearray(32))  # type: ignore[arg-type]
+
+
+def test_key_configuration_rejects_invalid_subject_type() -> None:
+    with pytest.raises(ValueError, match="non-empty strings"):
+        ApprovalVerificationKey(None, PUBLIC_KEY)  # type: ignore[arg-type]
+
+
+def test_registry_rejects_invalid_key_id_and_key_value() -> None:
+    key = ApprovalVerificationKey(APPROVER, PUBLIC_KEY)
+    with pytest.raises(ValueError, match="non-empty strings"):
+        Ed25519ApprovalVerifier({None: key})  # type: ignore[dict-item]
+    with pytest.raises(TypeError, match="ApprovalVerificationKey"):
+        Ed25519ApprovalVerifier({KEY_ID: object()})  # type: ignore[dict-item]
+
+
 def test_invalid_key_configuration_is_rejected() -> None:
     with pytest.raises(ValueError):
         ApprovalVerificationKey(
