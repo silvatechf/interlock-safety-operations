@@ -72,6 +72,12 @@ ruff check .
 mypy src
 ```
 
+## Package identity
+
+The installable Python distribution is named `kernveil`. The existing import namespace remains `sentinel_interlock` intentionally, preserving current Python import paths while the public product identity is consolidated. Install the project with `python -m pip install -e ".[dev]"` and continue importing modules from `sentinel_interlock`.
+
+If upgrading an environment that previously installed the `sentinel-interlock` distribution, recreate the virtual environment before installing this version to avoid stale distribution metadata.
+
 ## Existing demo
 
 The current demo covers three synthetic policy evaluations: a railway-inspired request that satisfies configured preconditions, a railway-inspired request denied because a section is reported occupied, and an IT restart request denied because its context is stale.
