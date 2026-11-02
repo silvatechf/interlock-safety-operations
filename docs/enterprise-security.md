@@ -10,42 +10,35 @@ The module is a **Policy Decision Point (PDP)**. It is not a Policy Enforcement 
 
 The `sentinel_interlock.security.models` module defines strict, immutable Pydantic contracts for identity, device, session, approval, access request, policy, and decision evidence. Extra fields are rejected and timestamps must be timezone-aware.
 
-Each session assertion is bound to a subject identifier, a device identifier, and a set of exact `SessionGrant` pairs. Every grant contains one action and one resource identifier. The evaluator requires an exact pair match: granting `secrets.read` on `vault://production/team-a` does not grant the same action on `vault://development/team-a`. There are no wildcard, prefix, or pattern semantics. Resource identifiers are opaque, case-sensitive strings; the evaluator does not canonicalize or interpret their URI syntax. Subject/device binding and grant membership are consistency checks over caller-supplied values, not cryptographic proof of authenticity.
+Each session assertion is bound to a subject identifier, a device identifier, and a set of exact `SessionGrant` pairs. Every grant contains one action and one resource identifier. The evaluator requires an exact pair match; there are no wildcard, prefix, or pattern semantics. Resource identifiers are opaque, case-sensitive strings. These checks are consistency checks over caller-supplied values, not cryptographic proof of authenticity.
 
-`evaluate_access()` returns one of three outcomes:
+`evaluate_access()` returns ALLOW, DENY, or INDETERMINATE for the supplied assertions. Explicit denials take precedence over indeterminate findings. Approval timestamps in the future produce `APPROVAL_NOT_YET_VALID`; stale or expired approvals produce `APPROVAL_EXPIRED`. Expiry boundaries are exclusive: an approval or session is not valid when `evaluated_at >= expires_at`.
 
-- **ALLOW:** every configured check passed for the supplied assertions.
-- **DENY:** at least one explicit policy violation was found, such as an unauthenticated identity, compromised device, revoked/expired or mismatched session, insufficient scope, missing phishing-resistant authentication method, or invalid privileged approval.
-- **INDETERMINATE:** no explicit denial was found, but the evidence is insufficient to authorize confidently, for example an untrusted assertion issuer, unknown device posture, or stale device observation.
+## Signed approvals and key lifecycle
 
-An explicit denial takes precedence over indeterminate findings. Approval timestamps in the future produce the distinct `APPROVAL_NOT_YET_VALID` reason; approvals older than the configured maximum age or expiring at the evaluation instant produce `APPROVAL_EXPIRED`. Expiry boundaries are exclusive: a session or approval is not valid when `evaluated_at >= expires_at`. The evaluator is deterministic for a fixed request, policy, and evaluation time, except for the generated decision identifier.
+The secure `evaluate_and_consume_approval()` workflow requires an `ApprovalVerifier`. The Ed25519 implementation verifies a canonical payload covering the approval ID, approver subject, action, resource, approval and expiry timestamps, and key ID.
 
-## Policy fingerprint and evidence
+Each locally configured `ApprovalVerificationKey` binds a key ID to one approver subject and defines:
+- `valid_from`: inclusive activation instant;
+- `valid_until`: optional exclusive expiry instant;
+- `revoked_at`: optional instant from which the key is rejected.
 
-Every access decision includes a `policy_sha256` value: a SHA-256 fingerprint of the effective policy configuration used for that evaluation. The fingerprint includes the policy identifier and version, sorted trust and requirement sets, and all configured freshness limits. Sorting set-valued fields makes the fingerprint independent of their iteration order.
+The verifier checks `valid_from <= evaluated_at < valid_until` when an end is configured, and rejects the key when `evaluated_at >= revoked_at`. Multiple key IDs can coexist in the local registry, allowing an explicit overlap during rotation. A retired key can be removed from the registry; a compromised key can be revoked by setting its revocation instant. The registry is immutable for each verifier instance: updating it requires constructing and deploying a new verifier configuration.
 
-The fingerprint makes configuration drift visible even when an operator accidentally reuses a policy version label. It is a content identifier, **not a digital signature**: it does not authenticate who created or approved the policy, prevent replacement, or prove that the policy was deployed. The policy object and its fingerprint remain caller-controlled inputs in this local prototype.
+The evaluation instant is supplied by the caller through the orchestration function. These checks therefore enforce configured boundaries against that supplied instant; they do not provide a trusted clock, trusted timestamping, automatic key distribution, or immediate fleet-wide revocation. Key provisioning and private-key custody remain external responsibilities. A valid signature proves possession of the corresponding private key and integrity of the signed claims; it does not independently prove human identity or organizational independence.
 
-## Property-based verification
+## Replay protection and trust boundaries
 
-`tests/test_security_properties.py` uses Hypothesis to generate variations of session revocation, device posture, evidence age, session subject/device binding, exact session action/resource grants, privileged action approval, and identity issuer. The properties assert that revoked or mismatched sessions, non-healthy devices, stale evidence, missing or resource-mismatched grants, mismatched approvals, and untrusted identity issuers do not produce ALLOW.
+The pure `evaluate_access()` function remains stateless and does not verify signatures. The secure orchestration verifies the signature and key lifecycle before consuming the approval identifier. `SQLiteApprovalStore` records consumed identifiers with a primary key and atomic SQLite write transaction. This is local single-database replay protection, not distributed coordination.
 
-`tests/test_security_engine.py` also verifies that equivalent set configurations produce the same policy fingerprint and that a changed effective configuration produces a different fingerprint even when the version label is unchanged. `tests/test_security_approval_boundaries.py` verifies approval freshness boundaries, future-dated approvals, exact expiry behavior, resource binding, and denial precedence.
+All identity, device, session, and approval attributes remain caller-supplied assertions. The prototype does not validate identity-provider signatures, token audiences, device certificates, attestation, session revocation feeds, or policy governance. It has no general API, distributed state, or external enforcement integration.
 
-These tests exercise decision invariants over generated inputs. They do not verify the authenticity of the assertions, prove complete policy correctness, or establish resistance to attacks against a deployed enforcement path.
-
-## Trust boundaries and limitations
-
-All identity, device, session, and approval attributes are caller-supplied assertions. A string naming an identity issuer or EDR source does not authenticate that source. A `healthy` posture value is not proof of endpoint health. Authentication method labels are not cryptographic proof of MFA. The secure consumption workflow verifies Ed25519 signatures against a local trusted-key registry that binds each key ID to an approver subject. This verifies possession of the corresponding private key and integrity of the signed claims; it does not independently prove the human identity or organizational independence of the key holder.
-
-The prototype does not validate identity-provider signatures, token audiences, device certificates, attestation, session revocation feeds, policy governance, or trusted time. It has no general API, distributed state, or external enforcement integration. The session `revoked` flag is an input assertion, not an active revocation mechanism. Approval assertions carry a caller-supplied `approval_id`. The pure `evaluate_access()` function remains stateless and can evaluate the same approval repeatedly. The optional `evaluate_and_consume_approval()` orchestration function first runs the complete policy evaluation and only attempts consumption after an `ALLOW` for a privileged action. `SQLiteApprovalStore` records consumed identifiers using a primary key and an atomic SQLite write transaction; a repeated identifier returns `DENY` with `APPROVAL_ALREADY_CONSUMED`. Failed or indeterminate policy evaluations do not consume an approval. The local store survives process restarts when backed by a file, and its uniqueness constraint serializes competing consumers of the same identifier within that database. This is a local single-database control, not distributed replay protection. `evaluate_and_consume_approval()` now requires an `ApprovalVerifier`; missing, unknown-key, subject-mismatched, malformed, or invalid signatures fail closed with `APPROVAL_SIGNATURE_INVALID`. Ed25519 verification covers the approval ID, approver subject, action, resource, approval and expiry timestamps, and key ID using canonical JSON. The verifier receives public keys only; private-key custody and issuance remain external responsibilities. The pure `evaluate_access()` function deliberately remains a stateless policy evaluator and does not verify signatures. The SQLite ledger remains local single-database state, not distributed replay protection. Trusted-key provisioning, rotation/revocation distribution, signer authentication, trusted time, and a production approval-issuance service are not implemented.
-
-A production integration would need authenticated ingress, OIDC/JWT validation with issuer/audience/nonce and key-rotation handling, signed and fresh device posture from an EDR/MDM source, server-side session state, durable policy governance, independently authenticated approval, and a PEP that enforces the PDP decision. Those integrations are not implemented here.
+A production integration would need authenticated ingress, OIDC/JWT validation with issuer/audience/nonce and key-rotation handling, signed and fresh device posture from an EDR/MDM source, server-side session state, durable policy governance, independently authenticated approval, trusted time, secure key provisioning and distribution, and a PEP that enforces the PDP decision. Those integrations are not implemented here.
 
 ## Running the tests
 
 ```shell
-pytest tests/test_security_engine.py
+pytest tests/test_security_approval_replay.py
 ruff check .
 mypy src
 ```
